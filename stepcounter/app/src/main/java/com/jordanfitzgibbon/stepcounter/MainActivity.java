@@ -15,7 +15,9 @@ import com.androidplot.xy.LineAndPointFormatter;
 import com.androidplot.xy.SimpleXYSeries;
 import com.androidplot.xy.XYPlot;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 
 
 public class MainActivity extends ActionBarActivity implements SensorEventListener {
@@ -24,14 +26,27 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
 
     private SensorManager sensorManager;
 
-    XYPlot plot;
-    SimpleXYSeries seriesX;
-    SimpleXYSeries seriesY;
-    SimpleXYSeries seriesZ;
+    XYPlot plotX;
+    XYPlot plotY;
+    XYPlot plotZ;
 
-    // The number of values  to store in the series
-    private final int GRAPH_BUFFER_SIZE = 100;
-    private final int SENSOR_DELAY_HERTZ = 1;
+    SimpleXYSeries seriesRawX;
+    SimpleXYSeries seriesRawY;
+    SimpleXYSeries seriesRawZ;
+    SimpleXYSeries seriesMedianX;
+    SimpleXYSeries seriesMedianY;
+    SimpleXYSeries seriesMedianZ;
+
+
+    // The number of values  to store in the series. Add one so the plot shows a nicer number at the end of the x domain
+    private final int SERIES_BUFFER_SIZE = 200 + 1;
+
+    //  Variables to store recent values for median filtering
+    private final int MEDIAN_FILTER_SIZE = 10;
+    private ArrayList<Float> recentValuesX = new ArrayList<Float>(Collections.nCopies(MEDIAN_FILTER_SIZE,(float)0));
+    private ArrayList<Float> recentValuesY = new ArrayList<Float>(Collections.nCopies(MEDIAN_FILTER_SIZE,(float)0));
+    private ArrayList<Float> recentValuesZ = new ArrayList<Float>(Collections.nCopies(MEDIAN_FILTER_SIZE,(float)0));
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -42,42 +57,6 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
         sensorManager = (SensorManager)getSystemService(SENSOR_SERVICE);
 
         this.configurePlots();
-    }
-
-    private void configurePlots()
-    {
-        plot = (XYPlot)findViewById(R.id.accelerometerXYPlot);
-
-        // X
-        Number[] seriesXNumbers = {1};
-        seriesX = new SimpleXYSeries(
-                Arrays.asList(seriesXNumbers), // convert array to a list
-                SimpleXYSeries.ArrayFormat.Y_VALS_ONLY, // use array indices as x values and array values as y values
-                "Accelerometer X Values" // series title
-        );
-        LineAndPointFormatter seriesXFormatter = new LineAndPointFormatter(Color.RED, Color.RED, null, null);
-        plot.addSeries(seriesX, seriesXFormatter);
-
-        // Y
-        Number[] seriesYNumbers = {0};
-        seriesY = new SimpleXYSeries(
-                Arrays.asList(seriesYNumbers), // convert array to a list
-                SimpleXYSeries.ArrayFormat.Y_VALS_ONLY, // use array indices as x values and array values as y values
-                "Accelerometer Y Values" // series title
-        );
-        LineAndPointFormatter seriesYFormatter = new LineAndPointFormatter(Color.GREEN, Color.GREEN, null, null);
-        plot.addSeries(seriesY, seriesYFormatter);
-
-        // Z
-        Number[] seriesZNumbers = {-1};
-        seriesZ = new SimpleXYSeries(
-                Arrays.asList(seriesZNumbers), // convert array to a list
-                SimpleXYSeries.ArrayFormat.Y_VALS_ONLY, // use array indices as x values and array values as y values
-                "Accelerometer Z Values" // series title
-        );
-        LineAndPointFormatter seriesZFormatter = new LineAndPointFormatter(Color.BLUE, Color.BLUE, null, null);
-        plot.addSeries(seriesZ, seriesZFormatter);
-
     }
 
     @Override
@@ -110,7 +89,11 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
         sensorManager.registerListener(
                 this,
                 sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER),
-                SensorManager.SENSOR_DELAY_UI);
+                //SensorManager.SENSOR_DELAY_NORMAL // every 200,000 microseconds
+                SensorManager.SENSOR_DELAY_UI // every 60,000 microseconds
+                //SensorManager.SENSOR_DELAY_GAME // every 20,000 microseconds
+                //SensorManager.SENSOR_DELAY_FASTEST // every 0 microseconds
+        );
     }
 
     @Override
@@ -134,25 +117,137 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
 
     private void handleAccelerometer(SensorEvent event) {
         float[] eventValues = event.values;
-        float x = eventValues[0];
-        float y = eventValues[1];
-        float z = eventValues[2];
+        float rawX = eventValues[0];
+        float rawY = eventValues[1];
+        float rawZ = eventValues[2];
 
-        Log.d(TAG, x + "," + y + "," + z);
+//        Log.d(TAG, x + "," + y + "," + z);
 
-        // Remove values from the series. Assume all series are the same size so use seriesX to do this check.
-        if (seriesX.size() >= GRAPH_BUFFER_SIZE)
+        // Apply a median filter but
+        float medianX = this.ApplyMedianFilter(this.recentValuesX, rawX);
+        float medianY = this.ApplyMedianFilter(this.recentValuesY, rawY);
+        float medianZ = this.ApplyMedianFilter(this.recentValuesZ, rawZ);
+
+        // Remove values from the series. Assume all series are the same size so use seriesRawX to do this check.
+        if (seriesRawX.size() >= SERIES_BUFFER_SIZE)
         {
-            seriesX.removeFirst();
-            seriesY.removeFirst();
-            seriesZ.removeFirst();
+            seriesRawX.removeFirst();
+            seriesRawY.removeFirst();
+            seriesRawZ.removeFirst();
+
+            seriesMedianX.removeFirst();
+            seriesMedianY.removeFirst();
+            seriesMedianZ.removeFirst();
         }
 
-        seriesX.addLast(null, x);
-        seriesY.addLast(null, y);
-        seriesZ.addLast(null, z);
+        seriesRawX.addLast(null, rawX);
+        seriesRawY.addLast(null, rawY);
+        seriesRawZ.addLast(null, rawZ);
 
-        plot.redraw();
+        seriesMedianX.addLast(null, medianX);
+        seriesMedianY.addLast(null, medianY);
+        seriesMedianZ.addLast(null, medianZ);
+
+        plotX.redraw();
+        plotY.redraw();
+        plotZ.redraw();
+    }
+
+    public float ApplyMedianFilter(ArrayList<Float> values, float newValue)
+    {
+        // Remove the oldest value from the front and append the newest to the end
+        values.remove(0);
+        values.add(newValue);
+
+        // Create a copy of the list so we don't disrupt the ordering after we sort
+        ArrayList<Float> newValues = new ArrayList<Float>(values);
+
+        Collections.sort(newValues);
+
+        int arraySize = newValues.size();
+
+        if (newValues.size() % 2 == 1) {
+            int middleIndex = (arraySize - 1) / 2;
+            return (float)newValues.get(middleIndex);
+        }
+        else
+        {
+            int lowIndex = (arraySize / 2) -1;
+            float lowValue = (float)newValues.get(lowIndex);
+            int highIndex = arraySize / 2;
+            float highValue = (float)newValues.get(highIndex);
+
+            return (lowValue + highValue) / 2;
+        }
+    }
+
+    private void configurePlots() {
+        plotX = (XYPlot)findViewById(R.id.accelerometerXYPlot_X);
+        plotY = (XYPlot)findViewById(R.id.accelerometerXYPlot_Y);
+        plotZ = (XYPlot)findViewById(R.id.accelerometerXYPlot_Z);
+
+        // Raw X
+        Number[] seriesXRawNumbers = {0};
+        seriesRawX = new SimpleXYSeries(
+                Arrays.asList(seriesXRawNumbers), // convert array to a list
+                SimpleXYSeries.ArrayFormat.Y_VALS_ONLY, // use array indices as x values and array values as y values
+                "Raw X Values" // series title
+        );
+        LineAndPointFormatter seriesXRawFormatter = new LineAndPointFormatter(Color.LTGRAY, null, null, null);
+        plotX.addSeries(seriesRawX, seriesXRawFormatter);
+
+        // Raw Y
+        Number[] seriesYRawNumbers = {0};
+        seriesRawY = new SimpleXYSeries(
+                Arrays.asList(seriesYRawNumbers), // convert array to a list
+                SimpleXYSeries.ArrayFormat.Y_VALS_ONLY, // use array indices as x values and array values as y values
+                "Raw Y Values" // series title
+        );
+        LineAndPointFormatter seriesYRawFormatter = new LineAndPointFormatter(Color.LTGRAY, null, null, null);
+        plotY.addSeries(seriesRawY, seriesYRawFormatter);
+
+        // Raw Z
+        Number[] seriesZRawNumbers = {0};
+        seriesRawZ = new SimpleXYSeries(
+                Arrays.asList(seriesZRawNumbers), // convert array to a list
+                SimpleXYSeries.ArrayFormat.Y_VALS_ONLY, // use array indices as x values and array values as y values
+                "Raw Z Values" // series title
+        );
+        LineAndPointFormatter seriesZRawFormatter = new LineAndPointFormatter(Color.LTGRAY, null, null, null);
+        plotZ.addSeries(seriesRawZ, seriesZRawFormatter);
+
+
+
+        // Median X
+        Number[] seriesXMedianNumbers = {0};
+        seriesMedianX = new SimpleXYSeries(
+                Arrays.asList(seriesXMedianNumbers), // convert array to a list
+                SimpleXYSeries.ArrayFormat.Y_VALS_ONLY, // use array indices as x values and array values as y values
+                "Median X Values" // series title
+        );
+        LineAndPointFormatter seriesXMedianFormatter = new LineAndPointFormatter(Color.RED, null, null, null);
+        plotX.addSeries(seriesMedianX, seriesXMedianFormatter);
+
+        // Median Y
+        Number[] seriesYMedianNumbers = {0};
+        seriesMedianY = new SimpleXYSeries(
+                Arrays.asList(seriesYMedianNumbers), // convert array to a list
+                SimpleXYSeries.ArrayFormat.Y_VALS_ONLY, // use array indices as x values and array values as y values
+                "Median Y Values" // series title
+        );
+        LineAndPointFormatter seriesYMedianFormatter = new LineAndPointFormatter(Color.GREEN, null, null, null);
+        plotY.addSeries(seriesMedianY, seriesYMedianFormatter);
+
+        // Median Z
+        Number[] seriesZMedianNumbers = {0};
+        seriesMedianZ = new SimpleXYSeries(
+                Arrays.asList(seriesZMedianNumbers), // convert array to a list
+                SimpleXYSeries.ArrayFormat.Y_VALS_ONLY, // use array indices as x values and array values as y values
+                "Median Z Values" // series title
+        );
+        LineAndPointFormatter seriesZMedianFormatter = new LineAndPointFormatter(Color.BLUE, null, null, null);
+        plotZ.addSeries(seriesMedianZ, seriesZMedianFormatter);
+
     }
 
 

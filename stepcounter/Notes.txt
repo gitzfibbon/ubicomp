@@ -1,0 +1,5 @@
+This file contains notes and assumptions that I made
+
+MEDIAN FILTERING
+For median filtering I use an ArrayList to keep track of the previous n values where n is the median filter size.
+Each time the sensor event fires, I remove the oldest and add the newest value.
