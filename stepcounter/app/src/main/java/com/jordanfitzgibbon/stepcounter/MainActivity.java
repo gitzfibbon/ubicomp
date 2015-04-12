@@ -1,5 +1,6 @@
 package com.jordanfitzgibbon.stepcounter;
 
+import android.graphics.Color;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
@@ -10,8 +11,11 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 
+import com.androidplot.xy.LineAndPointFormatter;
 import com.androidplot.xy.SimpleXYSeries;
 import com.androidplot.xy.XYPlot;
+
+import java.util.Arrays;
 
 
 public class MainActivity extends ActionBarActivity implements SensorEventListener {
@@ -21,7 +25,9 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
     private SensorManager sensorManager;
 
     XYPlot plot;
-    SimpleXYSeries series;
+    SimpleXYSeries seriesX;
+    SimpleXYSeries seriesY;
+    SimpleXYSeries seriesZ;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -30,8 +36,45 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
         Log.d(TAG, "onCreate");
 
         sensorManager = (SensorManager)getSystemService(SENSOR_SERVICE);
+
+        this.configurePlots();
     }
 
+    private void configurePlots()
+    {
+        plot = (XYPlot)findViewById(R.id.accelerometerXYPlot);
+
+        // X
+        Number[] seriesXNumbers = {1,2,3,4,5,6};
+        seriesX = new SimpleXYSeries(
+                Arrays.asList(seriesXNumbers), // convert array to a list
+                SimpleXYSeries.ArrayFormat.Y_VALS_ONLY, // use array indices as x values and array values as y values
+                "Accelerometer X Values" // series title
+        );
+        LineAndPointFormatter seriesXFormatter = new LineAndPointFormatter(Color.RED, Color.RED, null, null);
+        plot.addSeries(seriesX, seriesXFormatter);
+
+        // Y
+        Number[] seriesYNumbers = {0};
+        seriesY = new SimpleXYSeries(
+                Arrays.asList(seriesYNumbers), // convert array to a list
+                SimpleXYSeries.ArrayFormat.Y_VALS_ONLY, // use array indices as x values and array values as y values
+                "Accelerometer Y Values" // series title
+        );
+        LineAndPointFormatter seriesYFormatter = new LineAndPointFormatter(Color.GREEN, Color.GREEN, null, null);
+        plot.addSeries(seriesY, seriesYFormatter);
+
+        // Z
+        Number[] seriesZNumbers = {4,4,4,4,0,-4,-4,-4,-4,0};
+        seriesZ = new SimpleXYSeries(
+                Arrays.asList(seriesZNumbers), // convert array to a list
+                SimpleXYSeries.ArrayFormat.Y_VALS_ONLY, // use array indices as x values and array values as y values
+                "Accelerometer Z Values" // series title
+        );
+        LineAndPointFormatter seriesZFormatter = new LineAndPointFormatter(Color.BLUE, Color.BLUE, null, null);
+        plot.addSeries(seriesZ, seriesZFormatter);
+
+    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
