@@ -29,6 +29,10 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
     SimpleXYSeries seriesY;
     SimpleXYSeries seriesZ;
 
+    // The number of values  to store in the series
+    private final int GRAPH_BUFFER_SIZE = 100;
+    private final int SENSOR_DELAY_HERTZ = 1;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -45,7 +49,7 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
         plot = (XYPlot)findViewById(R.id.accelerometerXYPlot);
 
         // X
-        Number[] seriesXNumbers = {1,2,3,4,5,6};
+        Number[] seriesXNumbers = {1};
         seriesX = new SimpleXYSeries(
                 Arrays.asList(seriesXNumbers), // convert array to a list
                 SimpleXYSeries.ArrayFormat.Y_VALS_ONLY, // use array indices as x values and array values as y values
@@ -65,7 +69,7 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
         plot.addSeries(seriesY, seriesYFormatter);
 
         // Z
-        Number[] seriesZNumbers = {4,4,4,4,0,-4,-4,-4,-4,0};
+        Number[] seriesZNumbers = {-1};
         seriesZ = new SimpleXYSeries(
                 Arrays.asList(seriesZNumbers), // convert array to a list
                 SimpleXYSeries.ArrayFormat.Y_VALS_ONLY, // use array indices as x values and array values as y values
@@ -106,8 +110,7 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
         sensorManager.registerListener(
                 this,
                 sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER),
-                SensorManager.SENSOR_DELAY_FASTEST);
-
+                SensorManager.SENSOR_DELAY_UI);
     }
 
     @Override
@@ -132,10 +135,24 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
     private void handleAccelerometer(SensorEvent event) {
         float[] eventValues = event.values;
         float x = eventValues[0];
-        float y = eventValues[0];
-        float z = eventValues[0];
+        float y = eventValues[1];
+        float z = eventValues[2];
 
         Log.d(TAG, x + "," + y + "," + z);
+
+        // Remove values from the series. Assume all series are the same size so use seriesX to do this check.
+        if (seriesX.size() >= GRAPH_BUFFER_SIZE)
+        {
+            seriesX.removeFirst();
+            seriesY.removeFirst();
+            seriesZ.removeFirst();
+        }
+
+        seriesX.addLast(null, x);
+        seriesY.addLast(null, y);
+        seriesZ.addLast(null, z);
+
+        plot.redraw();
     }
 
 
