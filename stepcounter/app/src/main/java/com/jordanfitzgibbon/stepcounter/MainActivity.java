@@ -5,6 +5,8 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.media.AudioManager;
+import android.media.ToneGenerator;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -29,6 +31,9 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
 
     private SensorManager sensorManager;
 
+    // The hint value for the sensor sampling rate in microseconds
+    private final int SENSOR_DELAY_MICROSECONDS = 20000;
+
     XYPlot plotX;
     XYPlot plotY;
     XYPlot plotZ;
@@ -42,13 +47,13 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
     SimpleXYSeries stepMarkersSeries; // Keeps track of where a step was detected
 
     // The number of values  to store in the series. Add one so the plot shows a nicer number at the end of the x domain
-    private final int SERIES_BUFFER_SIZE = 200 + 1;
+    private final int SERIES_BUFFER_SIZE = 1000 + 1;
 
     // Variables to store recent values for median filtering
-    private final int MEDIAN_FILTER_SIZE = 4;
+    private final int MEDIAN_FILTER_SIZE = 10;
 
     // Store this many of the most recent sensor values. This is used for filtering and de-meaning.
-    private final int RECENT_VALUES_SIZE = 100;
+    private final int RECENT_VALUES_SIZE = 50;
 
     // Initialize ArrayLists to store recent values recorded by the sensor
     private ArrayList<Float> recentValuesX = new ArrayList<Float>(Collections.nCopies(RECENT_VALUES_SIZE,(float)0));
@@ -56,14 +61,20 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
     private ArrayList<Float> recentValuesZ = new ArrayList<Float>(Collections.nCopies(RECENT_VALUES_SIZE,(float)0));
 
     // In order to count as a step, an accelerometer value must have this magnitude above and below the 0 line.
-    private final double ZERO_CROSS_THRESHOLD = 0.3;
+    private final double ZERO_CROSS_THRESHOLD = 0.6;
 
     // Keep track of whether a value has gone above  the threshold
     private boolean aboveThreshold = false;
 
     // Keeps track of total steps
     private long stepsTaken = 0;
+
+    // View objects
     TextView stepsTakenTextView;
+    TextView settingsTextView;
+
+    // Used to play a sound for each step
+    ToneGenerator toneGenerator = new ToneGenerator(AudioManager.STREAM_NOTIFICATION, 100);
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -72,10 +83,17 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
         Log.d(TAG, "onCreate");
 
         stepsTakenTextView = (TextView)findViewById(R.id.stepsTakenTextView);
+        settingsTextView = (TextView)findViewById(R.id.settingsTextView);
+        settingsTextView.setText("Settings\nMedian Filter Size: " + MEDIAN_FILTER_SIZE
+            + "\nMean Size: " + RECENT_VALUES_SIZE
+            + "\nZero Crossing Threshold: " + ZERO_CROSS_THRESHOLD
+            + "\nSample Rate Hz: " + 1000000 / SENSOR_DELAY_MICROSECONDS);
 
         sensorManager = (SensorManager)getSystemService(SENSOR_SERVICE);
 
         this.configurePlots();
+
+
     }
 
     @Override
@@ -109,9 +127,10 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
                 this,
                 sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER),
                 //SensorManager.SENSOR_DELAY_NORMAL // every 200,000 microseconds
-                SensorManager.SENSOR_DELAY_UI // every 60,000 microseconds
+                //SensorManager.SENSOR_DELAY_UI // every 60,000 microseconds
                 //SensorManager.SENSOR_DELAY_GAME // every 20,000 microseconds
                 //SensorManager.SENSOR_DELAY_FASTEST // every 0 microseconds
+                SENSOR_DELAY_MICROSECONDS
         );
     }
 
@@ -193,8 +212,10 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
 
             // Increment steps taken
             stepsTaken++;
-
             stepsTakenTextView.setText(String.valueOf(stepsTaken));
+
+            // Play a sound
+            toneGenerator.startTone(ToneGenerator.TONE_PROP_BEEP);
         }
         else {
             // Add a 'invisible' value outside the range this is drawn on the plot
