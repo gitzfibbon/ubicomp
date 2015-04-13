@@ -1,5 +1,9 @@
 This file contains notes and assumptions that I made
 
+AXIS CHOICE
+For the step counter to work, the device must be held flat. Eg. how it would sit flat on a table.
+Therefore, I used the accelerometer Z axis measurements to measure steps since Z will translate to up/down motion when the device is in this orientation.
+
 MEDIAN FILTERING
 For median filtering I use an ArrayList called recentValues to keep track of the most recent values. The number of values that I kept is defined in RECENT_VALUES_SIZE.
 Each time the sensor event fires, I remove the oldest and add the newest value.

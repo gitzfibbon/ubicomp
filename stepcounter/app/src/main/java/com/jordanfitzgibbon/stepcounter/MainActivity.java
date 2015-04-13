@@ -10,12 +10,12 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.TextView;
 
 import com.androidplot.util.PixelUtils;
 import com.androidplot.xy.BoundaryMode;
 import com.androidplot.xy.LineAndPointFormatter;
 import com.androidplot.xy.SimpleXYSeries;
-import com.androidplot.xy.XValueMarker;
 import com.androidplot.xy.XYPlot;
 
 import java.util.ArrayList;
@@ -56,16 +56,22 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
     private ArrayList<Float> recentValuesZ = new ArrayList<Float>(Collections.nCopies(RECENT_VALUES_SIZE,(float)0));
 
     // In order to count as a step, an accelerometer value must have this magnitude above and below the 0 line.
-    private final double ZERO_CROSS_THRESHOLD = 0.5;
+    private final double ZERO_CROSS_THRESHOLD = 0.35;
 
     // Keep track of whether a value has gone above  the threshold
     private boolean aboveThreshold = false;
+
+    // Keeps track of total steps
+    private long stepsTaken = 0;
+    TextView stepsTakenTextView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         Log.d(TAG, "onCreate");
+
+        stepsTakenTextView = (TextView)findViewById(R.id.stepsTakenTextView);
 
         sensorManager = (SensorManager)getSystemService(SENSOR_SERVICE);
 
@@ -184,6 +190,11 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
             // Now handle the zero crossing event
             //stepMarkersSeries.addLast(null, filteredZ);
             stepMarkersSeries.addLast(null, 0);
+
+            // Increment steps taken
+            stepsTaken++;
+
+            stepsTakenTextView.setText(String.valueOf(stepsTaken));
         }
         else {
             // Add a 'invisible' value outside the range this is drawn on the plot
