@@ -11,8 +11,11 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 
+import com.androidplot.util.PixelUtils;
+import com.androidplot.xy.BoundaryMode;
 import com.androidplot.xy.LineAndPointFormatter;
 import com.androidplot.xy.SimpleXYSeries;
+import com.androidplot.xy.XValueMarker;
 import com.androidplot.xy.XYPlot;
 
 import java.util.ArrayList;
@@ -33,20 +36,30 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
     SimpleXYSeries seriesRawX;
     SimpleXYSeries seriesRawY;
     SimpleXYSeries seriesRawZ;
-    SimpleXYSeries seriesMedianX;
-    SimpleXYSeries seriesMedianY;
-    SimpleXYSeries seriesMedianZ;
-
+    SimpleXYSeries seriesFilteredX;
+    SimpleXYSeries seriesFilteredY;
+    SimpleXYSeries seriesFilteredZ;
+    SimpleXYSeries stepMarkersSeries; // Keeps track of where a step was detected
 
     // The number of values  to store in the series. Add one so the plot shows a nicer number at the end of the x domain
     private final int SERIES_BUFFER_SIZE = 200 + 1;
 
-    //  Variables to store recent values for median filtering
-    private final int MEDIAN_FILTER_SIZE = 10;
-    private ArrayList<Float> recentValuesX = new ArrayList<Float>(Collections.nCopies(MEDIAN_FILTER_SIZE,(float)0));
-    private ArrayList<Float> recentValuesY = new ArrayList<Float>(Collections.nCopies(MEDIAN_FILTER_SIZE,(float)0));
-    private ArrayList<Float> recentValuesZ = new ArrayList<Float>(Collections.nCopies(MEDIAN_FILTER_SIZE,(float)0));
+    // Variables to store recent values for median filtering
+    private final int MEDIAN_FILTER_SIZE = 5;
 
+    // Store this many of the most recent sensor values. This is used for filtering and de-meaning.
+    private final int RECENT_VALUES_SIZE = 100;
+
+    // Initialize ArrayLists to store recent values recorded by the sensor
+    private ArrayList<Float> recentValuesX = new ArrayList<Float>(Collections.nCopies(RECENT_VALUES_SIZE,(float)0));
+    private ArrayList<Float> recentValuesY = new ArrayList<Float>(Collections.nCopies(RECENT_VALUES_SIZE,(float)0));
+    private ArrayList<Float> recentValuesZ = new ArrayList<Float>(Collections.nCopies(RECENT_VALUES_SIZE,(float)0));
+
+    // In order to count as a step, an accelerometer value must have this magnitude above and below the 0 line.
+    private final double ZERO_CROSS_THRESHOLD = 0.5;
+
+    // Keep track of whether a value has gone above  the threshold
+    private boolean aboveThreshold = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -121,13 +134,6 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
         float rawY = eventValues[1];
         float rawZ = eventValues[2];
 
-//        Log.d(TAG, x + "," + y + "," + z);
-
-        // Apply a median filter but
-        float medianX = this.ApplyMedianFilter(this.recentValuesX, rawX);
-        float medianY = this.ApplyMedianFilter(this.recentValuesY, rawY);
-        float medianZ = this.ApplyMedianFilter(this.recentValuesZ, rawZ);
-
         // Remove values from the series. Assume all series are the same size so use seriesRawX to do this check.
         if (seriesRawX.size() >= SERIES_BUFFER_SIZE)
         {
@@ -135,32 +141,70 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
             seriesRawY.removeFirst();
             seriesRawZ.removeFirst();
 
-            seriesMedianX.removeFirst();
-            seriesMedianY.removeFirst();
-            seriesMedianZ.removeFirst();
+            seriesFilteredX.removeFirst();
+            seriesFilteredY.removeFirst();
+            seriesFilteredZ.removeFirst();
+            stepMarkersSeries.removeFirst();
         }
 
-        seriesRawX.addLast(null, rawX);
-        seriesRawY.addLast(null, rawY);
-        seriesRawZ.addLast(null, rawZ);
+        // Add raw values to the series so they get drawn. De-mean them so they get plotted with the filtered values.
+        seriesRawX.addLast(null, this.DeMean(this.recentValuesX, rawX));
+        seriesRawY.addLast(null, this.DeMean(this.recentValuesY, rawY));
+        seriesRawZ.addLast(null, this.DeMean(this.recentValuesZ, rawZ));
 
-        seriesMedianX.addLast(null, medianX);
-        seriesMedianY.addLast(null, medianY);
-        seriesMedianZ.addLast(null, medianZ);
+
+        // Apply a median filter
+        float filteredX = this.ApplyMedianFilter(this.recentValuesX, rawX);
+        float filteredY = this.ApplyMedianFilter(this.recentValuesY, rawY);
+        float filteredZ = this.ApplyMedianFilter(this.recentValuesZ, rawZ);
+
+        // De-Mean filtered values
+        filteredX = this.DeMean(this.recentValuesX, filteredX);
+        filteredY = this.DeMean(this.recentValuesY, filteredY);
+        filteredZ = this.DeMean(this.recentValuesZ, filteredZ);
+
+        seriesFilteredX.addLast(null, filteredX);
+        seriesFilteredY.addLast(null, filteredY);
+        seriesFilteredZ.addLast(null, filteredZ);
+
+        // Zero Crossing calculation
+        if (filteredZ >= ZERO_CROSS_THRESHOLD) {
+            // The value has gone above the threshold
+            this.aboveThreshold = true;
+
+            // Add a 'invisible' value outside the range this is drawn on the plot
+            stepMarkersSeries.addLast(null, 100);
+        }
+        else if (filteredZ <= -1 * ZERO_CROSS_THRESHOLD && this.aboveThreshold == true) {
+            // The value was above the threshold at some point and then went below
+            // This implies a zero crossing
+
+            this.aboveThreshold = false; // Reset this variable
+
+            // Now handle the zero crossing event
+            //stepMarkersSeries.addLast(null, filteredZ);
+            stepMarkersSeries.addLast(null, 0);
+        }
+        else {
+            // Add a 'invisible' value outside the range this is drawn on the plot
+            stepMarkersSeries.addLast(null, 100);
+        }
+
 
         plotX.redraw();
         plotY.redraw();
         plotZ.redraw();
     }
 
-    public float ApplyMedianFilter(ArrayList<Float> values, float newValue)
+    public float ApplyMedianFilter(ArrayList<Float> recentValues, float newValue)
     {
         // Remove the oldest value from the front and append the newest to the end
-        values.remove(0);
-        values.add(newValue);
+        recentValues.remove(0);
+        recentValues.add(newValue);
 
-        // Create a copy of the list so we don't disrupt the ordering after we sort
-        ArrayList<Float> newValues = new ArrayList<Float>(values);
+        // Create a copy of the list into newValues so we don't disrupt the ordering after we sort. Only take the most recent values that we need for median filtering.
+        int subListStart = recentValues.size() - MEDIAN_FILTER_SIZE;
+        ArrayList<Float> newValues = new ArrayList<Float>(recentValues.subList(subListStart, subListStart + MEDIAN_FILTER_SIZE));
 
         Collections.sort(newValues);
 
@@ -181,10 +225,27 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
         }
     }
 
+    public float DeMean(ArrayList<Float> recentValues, float valueToDeMean) {
+
+        int size = recentValues.size();
+        float sum = 0;
+        for (int i=0; i<size; i++) {
+            sum += recentValues.get(i);
+        }
+
+        float mean = sum / size;
+        return valueToDeMean - mean;
+    }
+
     private void configurePlots() {
         plotX = (XYPlot)findViewById(R.id.accelerometerXYPlot_X);
         plotY = (XYPlot)findViewById(R.id.accelerometerXYPlot_Y);
         plotZ = (XYPlot)findViewById(R.id.accelerometerXYPlot_Z);
+
+        double rangeBoundary = 1.5;
+        plotX.setRangeBoundaries(-1 * rangeBoundary, rangeBoundary, BoundaryMode.FIXED);
+        plotY.setRangeBoundaries(-1 * rangeBoundary, rangeBoundary, BoundaryMode.FIXED);
+        plotZ.setRangeBoundaries(-1 * rangeBoundary, rangeBoundary, BoundaryMode.FIXED);
 
         // Raw X
         Number[] seriesXRawNumbers = {0};
@@ -220,34 +281,44 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
 
         // Median X
         Number[] seriesXMedianNumbers = {0};
-        seriesMedianX = new SimpleXYSeries(
+        seriesFilteredX = new SimpleXYSeries(
                 Arrays.asList(seriesXMedianNumbers), // convert array to a list
                 SimpleXYSeries.ArrayFormat.Y_VALS_ONLY, // use array indices as x values and array values as y values
                 "Median X Values" // series title
         );
         LineAndPointFormatter seriesXMedianFormatter = new LineAndPointFormatter(Color.RED, null, null, null);
-        plotX.addSeries(seriesMedianX, seriesXMedianFormatter);
+        plotX.addSeries(seriesFilteredX, seriesXMedianFormatter);
 
         // Median Y
         Number[] seriesYMedianNumbers = {0};
-        seriesMedianY = new SimpleXYSeries(
+        seriesFilteredY = new SimpleXYSeries(
                 Arrays.asList(seriesYMedianNumbers), // convert array to a list
                 SimpleXYSeries.ArrayFormat.Y_VALS_ONLY, // use array indices as x values and array values as y values
                 "Median Y Values" // series title
         );
         LineAndPointFormatter seriesYMedianFormatter = new LineAndPointFormatter(Color.GREEN, null, null, null);
-        plotY.addSeries(seriesMedianY, seriesYMedianFormatter);
+        plotY.addSeries(seriesFilteredY, seriesYMedianFormatter);
 
         // Median Z
         Number[] seriesZMedianNumbers = {0};
-        seriesMedianZ = new SimpleXYSeries(
+        seriesFilteredZ = new SimpleXYSeries(
                 Arrays.asList(seriesZMedianNumbers), // convert array to a list
                 SimpleXYSeries.ArrayFormat.Y_VALS_ONLY, // use array indices as x values and array values as y values
                 "Median Z Values" // series title
         );
         LineAndPointFormatter seriesZMedianFormatter = new LineAndPointFormatter(Color.BLUE, null, null, null);
-        plotZ.addSeries(seriesMedianZ, seriesZMedianFormatter);
+        plotZ.addSeries(seriesFilteredZ, seriesZMedianFormatter);
 
+        // Steps
+        Number[] stepMarkerNumbers = {0};
+        stepMarkersSeries = new SimpleXYSeries(
+                Arrays.asList(stepMarkerNumbers), // convert array to a list
+                SimpleXYSeries.ArrayFormat.Y_VALS_ONLY, // use array indices as x values and array values as y values
+                "Step Markers" // series title
+        );
+        LineAndPointFormatter stepMarkerFormatter = new LineAndPointFormatter(null, Color.WHITE, null, null);
+        stepMarkerFormatter.getVertexPaint().setStrokeWidth(PixelUtils.dpToPix(10));
+        plotZ.addSeries(stepMarkersSeries, stepMarkerFormatter);
     }
 
 

@@ -19,10 +19,10 @@
         androidPlot.titleWidget.labelPaint.textSize="@dimen/title_font_size"
         androidPlot.domainLabelWidget.labelPaint.textSize="@dimen/domain_label_font_size"
         androidPlot.rangeLabelWidget.labelPaint.textSize="@dimen/range_label_font_size"
-        androidPlot.graphWidget.marginTop="20dp"
-        androidPlot.graphWidget.marginLeft="15dp"
-        androidPlot.graphWidget.marginBottom="25dp"
-        androidPlot.graphWidget.marginRight="10dp"
+        androidPlot.graphWidget.marginTop="@dimen/marginTop"
+        androidPlot.graphWidget.marginLeft="@dimen/marginLeft"
+        androidPlot.graphWidget.marginBottom="@dimen/marginBottom"
+        androidPlot.graphWidget.marginRight="@dimen/marginRight"
         androidPlot.graphWidget.rangeLabelPaint.textSize="@dimen/range_tick_label_font_size"
         androidPlot.graphWidget.rangeOriginLabelPaint.textSize="@dimen/range_tick_label_font_size"
         androidPlot.graphWidget.domainLabelPaint.textSize="@dimen/domain_tick_label_font_size"
@@ -32,7 +32,8 @@
         androidPlot.legendWidget.iconSizeMetrics.widthMetric.value="15dp"
         androidPlot.legendWidget.heightMetric.value="25dp"
         androidPlot.legendWidget.positionMetrics.anchor="right_bottom"
-        androidPlot.graphWidget.gridLinePaint.color="#000000"/>
+        androidPlot.graphWidget.gridLinePaint.color="#000000"
+        />
 
     <com.androidplot.xy.XYPlot
         android:id="@+id/accelerometerXYPlot_Y"
@@ -44,10 +45,10 @@
         androidPlot.titleWidget.labelPaint.textSize="@dimen/title_font_size"
         androidPlot.domainLabelWidget.labelPaint.textSize="@dimen/domain_label_font_size"
         androidPlot.rangeLabelWidget.labelPaint.textSize="@dimen/range_label_font_size"
-        androidPlot.graphWidget.marginTop="20dp"
-        androidPlot.graphWidget.marginLeft="15dp"
-        androidPlot.graphWidget.marginBottom="25dp"
-        androidPlot.graphWidget.marginRight="10dp"
+        androidPlot.graphWidget.marginTop="@dimen/marginTop"
+        androidPlot.graphWidget.marginLeft="@dimen/marginLeft"
+        androidPlot.graphWidget.marginBottom="@dimen/marginBottom"
+        androidPlot.graphWidget.marginRight="@dimen/marginRight"
         androidPlot.graphWidget.rangeLabelPaint.textSize="@dimen/range_tick_label_font_size"
         androidPlot.graphWidget.rangeOriginLabelPaint.textSize="@dimen/range_tick_label_font_size"
         androidPlot.graphWidget.domainLabelPaint.textSize="@dimen/domain_tick_label_font_size"
@@ -69,10 +70,10 @@
         androidPlot.titleWidget.labelPaint.textSize="@dimen/title_font_size"
         androidPlot.domainLabelWidget.labelPaint.textSize="@dimen/domain_label_font_size"
         androidPlot.rangeLabelWidget.labelPaint.textSize="@dimen/range_label_font_size"
-        androidPlot.graphWidget.marginTop="20dp"
-        androidPlot.graphWidget.marginLeft="15dp"
-        androidPlot.graphWidget.marginBottom="25dp"
-        androidPlot.graphWidget.marginRight="10dp"
+        androidPlot.graphWidget.marginTop="@dimen/marginTop"
+        androidPlot.graphWidget.marginLeft="@dimen/marginLeft"
+        androidPlot.graphWidget.marginBottom="@dimen/marginBottom"
+        androidPlot.graphWidget.marginRight="@dimen/marginRight"
         androidPlot.graphWidget.rangeLabelPaint.textSize="@dimen/range_tick_label_font_size"
         androidPlot.graphWidget.rangeOriginLabelPaint.textSize="@dimen/range_tick_label_font_size"
         androidPlot.graphWidget.domainLabelPaint.textSize="@dimen/domain_tick_label_font_size"
@@ -82,5 +83,5 @@
         androidPlot.legendWidget.iconSizeMetrics.widthMetric.value="15dp"
         androidPlot.legendWidget.heightMetric.value="25dp"
         androidPlot.legendWidget.positionMetrics.anchor="right_bottom"
-        androidPlot.graphWidget.gridLinePaint.color="#000000"/>
+        androidPlot.graphWidget.gridLinePaint.color="#000000" />
 </LinearLayout>

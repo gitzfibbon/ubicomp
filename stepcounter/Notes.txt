@@ -1,5 +1,17 @@
 This file contains notes and assumptions that I made
 
 MEDIAN FILTERING
-For median filtering I use an ArrayList to keep track of the previous n values where n is the median filter size.
+For median filtering I use an ArrayList called recentValues to keep track of the most recent values. The number of values that I kept is defined in RECENT_VALUES_SIZE.
 Each time the sensor event fires, I remove the oldest and add the newest value.
+There is a variable called MEDIAN_FILTER_SIZE that specifies how many recent values to calculate the median.
+
+DE-MEANING
+I use the values stored in recentValues to calculate the mean of the recent values.
+I use this mean and subtract it from the values that have a median filter applied.
+This worked well in bringing values back to around 0 so I can use zero-crossing.
+
+ZERO CROSSING
+When the device is sitting on a desk the sensor still fires events and values will cross zero.
+I set a threshold called ZERO_CROSS_THRESHOLD so that a value must go above that value and then below the that same (negative) value to be counted.
+
+
