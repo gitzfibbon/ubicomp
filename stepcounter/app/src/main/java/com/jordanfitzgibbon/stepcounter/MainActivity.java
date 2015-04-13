@@ -53,7 +53,7 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
     private final int SERIES_BUFFER_SIZE = 900;
 
     // Variables to store recent values for median filtering
-    private final int MEDIAN_FILTER_SIZE = 7;
+    private final int MEDIAN_FILTER_SIZE = 8;
 
     // Store this many of the most recent sensor values. This is used for filtering and de-meaning.
     private final int RECENT_VALUES_SIZE = 50;
@@ -87,7 +87,8 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
 
         stepsTakenTextView = (TextView)findViewById(R.id.stepsTakenTextView);
         settingsTextView = (TextView)findViewById(R.id.settingsTextView);
-        settingsTextView.setText("Settings\nMedian Filter Size: " + MEDIAN_FILTER_SIZE
+        settingsTextView.setText("Device must be held flat in your palm"
+            + "\nMedian Filter Size: " + MEDIAN_FILTER_SIZE
             + "\nMean Size: " + RECENT_VALUES_SIZE
             + "\nZero Crossing Threshold: " + ZERO_CROSS_THRESHOLD
             + "\nSample Rate Hz: " + 1000000 / SENSOR_DELAY_MICROSECONDS);
