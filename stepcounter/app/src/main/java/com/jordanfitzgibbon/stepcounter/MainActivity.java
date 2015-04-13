@@ -23,6 +23,7 @@ import com.androidplot.xy.XYPlot;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 
 
 public class MainActivity extends ActionBarActivity implements SensorEventListener {
@@ -44,13 +45,15 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
     SimpleXYSeries seriesFilteredX;
     SimpleXYSeries seriesFilteredY;
     SimpleXYSeries seriesFilteredZ;
-    SimpleXYSeries stepMarkersSeries; // Keeps track of where a step was detected
+    SimpleXYSeries seriesStepMarker; // Keeps track of where a step was detected
+    SimpleXYSeries seriesThresholdUpperZ; // Used to draw a horizontal line for upper threshold
+    SimpleXYSeries seriesThresholdLowerZ; // Used to draw a horizontal line for lower threshold
 
-    // The number of values  to store in the series. Add one so the plot shows a nicer number at the end of the x domain
-    private final int SERIES_BUFFER_SIZE = 1000 + 1;
+    // The number of values  to store in the series
+    private final int SERIES_BUFFER_SIZE = 900;
 
     // Variables to store recent values for median filtering
-    private final int MEDIAN_FILTER_SIZE = 10;
+    private final int MEDIAN_FILTER_SIZE = 7;
 
     // Store this many of the most recent sensor values. This is used for filtering and de-meaning.
     private final int RECENT_VALUES_SIZE = 50;
@@ -61,7 +64,7 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
     private ArrayList<Float> recentValuesZ = new ArrayList<Float>(Collections.nCopies(RECENT_VALUES_SIZE,(float)0));
 
     // In order to count as a step, an accelerometer value must have this magnitude above and below the 0 line.
-    private final double ZERO_CROSS_THRESHOLD = 0.6;
+    private final double ZERO_CROSS_THRESHOLD = 0.4;
 
     // Keep track of whether a value has gone above  the threshold
     private boolean aboveThreshold = false;
@@ -169,7 +172,7 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
             seriesFilteredX.removeFirst();
             seriesFilteredY.removeFirst();
             seriesFilteredZ.removeFirst();
-            stepMarkersSeries.removeFirst();
+            seriesStepMarker.removeFirst();
         }
 
         // Add raw values to the series so they get drawn. De-mean them so they get plotted with the filtered values.
@@ -198,7 +201,7 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
             this.aboveThreshold = true;
 
             // Add a 'invisible' value outside the range this is drawn on the plot
-            stepMarkersSeries.addLast(null, 100);
+            seriesStepMarker.addLast(null, 100);
         }
         else if (filteredZ <= -1 * ZERO_CROSS_THRESHOLD && this.aboveThreshold == true) {
             // The value was above the threshold at some point and then went below
@@ -207,8 +210,7 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
             this.aboveThreshold = false; // Reset this variable
 
             // Now handle the zero crossing event
-            //stepMarkersSeries.addLast(null, filteredZ);
-            stepMarkersSeries.addLast(null, 0);
+            seriesStepMarker.addLast(null, 0);
 
             // Increment steps taken
             stepsTaken++;
@@ -219,7 +221,7 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
         }
         else {
             // Add a 'invisible' value outside the range this is drawn on the plot
-            stepMarkersSeries.addLast(null, 100);
+            seriesStepMarker.addLast(null, 100);
         }
 
 
@@ -274,17 +276,21 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
         plotY = (XYPlot)findViewById(R.id.accelerometerXYPlot_Y);
         plotZ = (XYPlot)findViewById(R.id.accelerometerXYPlot_Z);
 
-        double rangeBoundary = 1.5;
+        double rangeBoundary = 1.3;
         plotX.setRangeBoundaries(-1 * rangeBoundary, rangeBoundary, BoundaryMode.FIXED);
         plotY.setRangeBoundaries(-1 * rangeBoundary, rangeBoundary, BoundaryMode.FIXED);
         plotZ.setRangeBoundaries(-1 * rangeBoundary, rangeBoundary, BoundaryMode.FIXED);
+
+        plotX.setDomainBoundaries(0, SERIES_BUFFER_SIZE, BoundaryMode.FIXED);
+        plotY.setDomainBoundaries(0, SERIES_BUFFER_SIZE, BoundaryMode.FIXED);
+        plotZ.setDomainBoundaries(0, SERIES_BUFFER_SIZE, BoundaryMode.FIXED);
 
         // Raw X
         Number[] seriesXRawNumbers = {0};
         seriesRawX = new SimpleXYSeries(
                 Arrays.asList(seriesXRawNumbers), // convert array to a list
                 SimpleXYSeries.ArrayFormat.Y_VALS_ONLY, // use array indices as x values and array values as y values
-                "Raw X Values" // series title
+                "Raw X" // series title
         );
         LineAndPointFormatter seriesXRawFormatter = new LineAndPointFormatter(Color.LTGRAY, null, null, null);
         plotX.addSeries(seriesRawX, seriesXRawFormatter);
@@ -294,7 +300,7 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
         seriesRawY = new SimpleXYSeries(
                 Arrays.asList(seriesYRawNumbers), // convert array to a list
                 SimpleXYSeries.ArrayFormat.Y_VALS_ONLY, // use array indices as x values and array values as y values
-                "Raw Y Values" // series title
+                "Raw Y" // series title
         );
         LineAndPointFormatter seriesYRawFormatter = new LineAndPointFormatter(Color.LTGRAY, null, null, null);
         plotY.addSeries(seriesRawY, seriesYRawFormatter);
@@ -304,7 +310,7 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
         seriesRawZ = new SimpleXYSeries(
                 Arrays.asList(seriesZRawNumbers), // convert array to a list
                 SimpleXYSeries.ArrayFormat.Y_VALS_ONLY, // use array indices as x values and array values as y values
-                "Raw Z Values" // series title
+                "Raw Z" // series title
         );
         LineAndPointFormatter seriesZRawFormatter = new LineAndPointFormatter(Color.LTGRAY, null, null, null);
         plotZ.addSeries(seriesRawZ, seriesZRawFormatter);
@@ -316,7 +322,7 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
         seriesFilteredX = new SimpleXYSeries(
                 Arrays.asList(seriesXMedianNumbers), // convert array to a list
                 SimpleXYSeries.ArrayFormat.Y_VALS_ONLY, // use array indices as x values and array values as y values
-                "Median X Values" // series title
+                "Median X" // series title
         );
         LineAndPointFormatter seriesXMedianFormatter = new LineAndPointFormatter(Color.RED, null, null, null);
         plotX.addSeries(seriesFilteredX, seriesXMedianFormatter);
@@ -326,7 +332,7 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
         seriesFilteredY = new SimpleXYSeries(
                 Arrays.asList(seriesYMedianNumbers), // convert array to a list
                 SimpleXYSeries.ArrayFormat.Y_VALS_ONLY, // use array indices as x values and array values as y values
-                "Median Y Values" // series title
+                "Median Y" // series title
         );
         LineAndPointFormatter seriesYMedianFormatter = new LineAndPointFormatter(Color.GREEN, null, null, null);
         plotY.addSeries(seriesFilteredY, seriesYMedianFormatter);
@@ -336,21 +342,40 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
         seriesFilteredZ = new SimpleXYSeries(
                 Arrays.asList(seriesZMedianNumbers), // convert array to a list
                 SimpleXYSeries.ArrayFormat.Y_VALS_ONLY, // use array indices as x values and array values as y values
-                "Median Z Values" // series title
+                "Median Z" // series title
         );
         LineAndPointFormatter seriesZMedianFormatter = new LineAndPointFormatter(Color.BLUE, null, null, null);
         plotZ.addSeries(seriesFilteredZ, seriesZMedianFormatter);
 
         // Steps
         Number[] stepMarkerNumbers = {0};
-        stepMarkersSeries = new SimpleXYSeries(
+        seriesStepMarker = new SimpleXYSeries(
                 Arrays.asList(stepMarkerNumbers), // convert array to a list
                 SimpleXYSeries.ArrayFormat.Y_VALS_ONLY, // use array indices as x values and array values as y values
-                "Step Markers" // series title
+                "Steps" // series title
         );
         LineAndPointFormatter stepMarkerFormatter = new LineAndPointFormatter(null, Color.WHITE, null, null);
         stepMarkerFormatter.getVertexPaint().setStrokeWidth(PixelUtils.dpToPix(10));
-        plotZ.addSeries(stepMarkersSeries, stepMarkerFormatter);
+        plotZ.addSeries(seriesStepMarker, stepMarkerFormatter);
+
+        // Threshold Lines
+        LineAndPointFormatter thresholdFormatter = new LineAndPointFormatter(Color.WHITE, null, null, null);
+
+        List<Double> thresholdUpperNumbers = Collections.nCopies(SERIES_BUFFER_SIZE,ZERO_CROSS_THRESHOLD);
+        seriesThresholdUpperZ = new SimpleXYSeries(
+                thresholdUpperNumbers,
+                SimpleXYSeries.ArrayFormat.Y_VALS_ONLY, // use array indices as x values and array values as y values
+                "Upper" // series title
+        );
+        plotZ.addSeries(seriesThresholdUpperZ, thresholdFormatter);
+
+        List<Double> thresholdLowerNumbers = Collections.nCopies(SERIES_BUFFER_SIZE,-1 * ZERO_CROSS_THRESHOLD);
+        seriesThresholdLowerZ = new SimpleXYSeries(
+                thresholdLowerNumbers,
+                SimpleXYSeries.ArrayFormat.Y_VALS_ONLY, // use array indices as x values and array values as y values
+                "Lower" // series title
+        );
+        plotZ.addSeries(seriesThresholdLowerZ, thresholdFormatter);
     }
 
 
