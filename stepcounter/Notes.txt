@@ -1,21 +1,36 @@
-This file contains notes and assumptions that I made
+This file contains decisions and assumptions that I made.
+
+INSTRUCTIONS
+For the step counter to work, the device must be held flat. Eg. how it would sit flat on a table.
+Hold the device steady while you walk. You can watch on the display which actions are recorded as steps (see INTERFACE below).
+
+CONFIGURATION SETTINGS
+I chose some settings, eg. sample rate, median size filter, etc (described below) that were well suited to my walking style.
+Spontaneous movements will tend to get recorded as steps. This could have been mitigated by applying other filters such as FFT.
 
 AXIS CHOICE
-For the step counter to work, the device must be held flat. Eg. how it would sit flat on a table.
-Therefore, I used the accelerometer Z axis measurements to measure steps since Z will translate to up/down motion when the device is in this orientation.
+I used the accelerometer Z axis measurements to measure steps since Z will translate to up/down motion when the device is in the instructed orientation.
 
 MEDIAN FILTERING
 For median filtering I use an ArrayList called recentValues to keep track of the most recent values. The number of values that I kept is defined in RECENT_VALUES_SIZE.
 Each time the sensor event fires, I remove the oldest and add the newest value.
 There is a variable called MEDIAN_FILTER_SIZE that specifies how many recent values to calculate the median.
+Median filter size of 20 did a good job of smoothing out noise at the sample rate of 100Hz. Slower sample rates worked (eg. 20Hz, with smaller median filter) but the device handled 100Hz well so I kept it for more granularity.
 
 DE-MEANING
 I use the values stored in recentValues to calculate the mean of the recent values.
 I use this mean and subtract it from the values that have a median filter applied.
 This worked well in bringing values back to around 0 so I can use zero-crossing.
+For de-meaning, I used the mean of the previous 25 values.
 
 ZERO CROSSING
 When the device is sitting on a desk the sensor still fires events and values will cross zero.
 I set a threshold called ZERO_CROSS_THRESHOLD so that a value must go above that value and then below the that same (negative) value to be counted.
+The upper and lower threshold that I used was +/-0.3. This worked well at counting steps based on my walking style. A slower, more careful walked may require a lower threshold and vice versa for a more aggressive walker.
 
+INTERFACE
+The UI shows the configuration settings in the top left and steps taken in the top right.
+There are three plots - one for each accelerometer axis.
+Within the plots, the colored line is the median filtered, de-meaned values for a particular axis. The grey line is raw data that was also de-meaned.
+The Z (top) plot is the most relevant. The thresholds for zero crossing are shown by the horizontal white line. Each step is marked as a white dot.
 

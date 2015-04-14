@@ -33,7 +33,7 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
     private SensorManager sensorManager;
 
     // The hint value for the sensor sampling rate in microseconds
-    private final int SENSOR_DELAY_MICROSECONDS = 20000;
+    private final int SENSOR_DELAY_MICROSECONDS = 10000;
 
     XYPlot plotX;
     XYPlot plotY;
@@ -50,10 +50,10 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
     SimpleXYSeries seriesThresholdLowerZ; // Used to draw a horizontal line for lower threshold
 
     // The number of values  to store in the series
-    private final int SERIES_BUFFER_SIZE = 900;
+    private final int SERIES_BUFFER_SIZE = 1000;
 
     // Variables to store recent values for median filtering
-    private final int MEDIAN_FILTER_SIZE = 8;
+    private final int MEDIAN_FILTER_SIZE = 20;
 
     // Store this many of the most recent sensor values. This is used for filtering and de-meaning.
     private final int RECENT_VALUES_SIZE = 50;
@@ -64,7 +64,7 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
     private ArrayList<Float> recentValuesZ = new ArrayList<Float>(Collections.nCopies(RECENT_VALUES_SIZE,(float)0));
 
     // In order to count as a step, an accelerometer value must have this magnitude above and below the 0 line.
-    private final double ZERO_CROSS_THRESHOLD = 0.4;
+    private final double ZERO_CROSS_THRESHOLD = 0.3;
 
     // Keep track of whether a value has gone above  the threshold
     private boolean aboveThreshold = false;
