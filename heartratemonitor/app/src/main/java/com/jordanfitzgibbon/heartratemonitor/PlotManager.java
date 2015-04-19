@@ -14,78 +14,148 @@ public class PlotManager {
 
     private final int plotSize = 200;
 
-    XYPlot plot;
-    SimpleXYSeries seriesR;
-    SimpleXYSeries seriesG;
-    SimpleXYSeries seriesB;
-    SimpleXYSeries seriesAll;
+    // Plots de-meaned and median filtered values
+    XYPlot filteredPlot;
+    SimpleXYSeries seriesDeMeanedR;
+    SimpleXYSeries seriesDeMeanedG;
+    SimpleXYSeries seriesDeMeanedB;
+    SimpleXYSeries seriesDeMeanedRGB;
+
+    // Plots raw RGB data (or means of the full frame)
+    XYPlot rawPlot;
+    SimpleXYSeries seriesRawR;
+    SimpleXYSeries seriesRawG;
+    SimpleXYSeries seriesRawB;
+    SimpleXYSeries seriesRawRGB;
 
     public PlotManager(ActionBarActivity parent) {
-        this.plot = (XYPlot)parent.findViewById(R.id.fooPlot);
+        this.rawPlot = (XYPlot)parent.findViewById(R.id.rawPlot);
+        this.filteredPlot = (XYPlot)parent.findViewById(R.id.filteredPlot);
     }
 
-    public void UpdatePlots(double r, double g, double b) {
+    public void UpdateFilteredPlot(double r, double g, double b) {
 
-        // Remove values from the series. Assume all seriesR are the same size so use seriesR to do this check.
-        if (seriesR.size() >=  plotSize) {
-            seriesR.removeFirst();
-            seriesG.removeFirst();
-            seriesB.removeFirst();
-            seriesAll.removeFirst();
-
+        // Remove values from the series. Assume all seriesDeMeanedR are the same size so use seriesDeMeanedR to do this check.
+        if (seriesDeMeanedR.size() >=  plotSize) {
+            seriesDeMeanedR.removeFirst();
+            seriesDeMeanedG.removeFirst();
+            seriesDeMeanedB.removeFirst();
+            seriesDeMeanedRGB.removeFirst();
         }
 
-        seriesR.addLast(null, r);
-        seriesG.addLast(null, g);
-        seriesB.addLast(null, b);
-        seriesAll.addLast(null, (r + g + b) / 3);
+        seriesDeMeanedR.addLast(null, r);
+        seriesDeMeanedG.addLast(null, g);
+        seriesDeMeanedB.addLast(null, b);
+        seriesDeMeanedRGB.addLast(null, (r + g + b) / 3);
 
-        plot.redraw();
+        filteredPlot.redraw();
     }
 
-    public void ConfigurePlots() {
+    public void ConfigureFilteredPlot() {
 
-        double rangeBoundary = 255;
-//        plot.setRangeBoundaries(-1 * rangeBoundary, rangeBoundary, BoundaryMode.FIXED);
-        plot.setRangeBoundaries(0, rangeBoundary, BoundaryMode.FIXED);
-
-        plot.setDomainBoundaries(0, plotSize, BoundaryMode.FIXED);
+        double rangeBoundary = 20;
+        filteredPlot.setRangeBoundaries(-1 * rangeBoundary, rangeBoundary, BoundaryMode.FIXED);
+        rawPlot.setDomainBoundaries(0, plotSize, BoundaryMode.FIXED);
 
         // Red
-        seriesR = new SimpleXYSeries(
+        seriesDeMeanedR = new SimpleXYSeries(
+                Collections.nCopies(plotSize, 0), // convert array to a list
+                SimpleXYSeries.ArrayFormat.Y_VALS_ONLY, // use array indices as x values and array values as y values
+                "DeMeaned R" // title
+        );
+        LineAndPointFormatter seriesFormatterR = new LineAndPointFormatter(Color.RED, null, null, null);
+        filteredPlot.addSeries(seriesDeMeanedR, seriesFormatterR);
+
+        // Green
+        seriesDeMeanedG = new SimpleXYSeries(
+                Collections.nCopies(plotSize, 0), // convert array to a list
+                SimpleXYSeries.ArrayFormat.Y_VALS_ONLY, // use array indices as x values and array values as y values
+                "DeMeaned G" // title
+        );
+        LineAndPointFormatter seriesFormatterG = new LineAndPointFormatter(Color.GREEN, null, null, null);
+        filteredPlot.addSeries(seriesDeMeanedG, seriesFormatterG);
+
+        // Blue
+        seriesDeMeanedB = new SimpleXYSeries(
+                Collections.nCopies(plotSize, 0), // convert array to a list
+                SimpleXYSeries.ArrayFormat.Y_VALS_ONLY, // use array indices as x values and array values as y values
+                "DeMeaned B" // title
+        );
+        LineAndPointFormatter seriesFormatterB = new LineAndPointFormatter(Color.BLUE, null, null, null);
+        filteredPlot.addSeries(seriesDeMeanedB, seriesFormatterB);
+
+        // All
+        seriesDeMeanedRGB = new SimpleXYSeries(
+                Collections.nCopies(plotSize, 0), // convert array to a list
+                SimpleXYSeries.ArrayFormat.Y_VALS_ONLY, // use array indices as x values and array values as y values
+                "DeMeaned RBG" // title
+        );
+        LineAndPointFormatter seriesFormatterAll = new LineAndPointFormatter(Color.LTGRAY, null, null, null);
+        filteredPlot.addSeries(seriesDeMeanedRGB, seriesFormatterAll);
+    }
+
+
+
+    public void UpdateRawPlot(double r, double g, double b) {
+
+        // Remove values from the series. Assume all seriesRawR are the same size so use seriesRawR to do this check.
+        if (seriesRawR.size() >=  plotSize) {
+            seriesRawR.removeFirst();
+            seriesRawG.removeFirst();
+            seriesRawB.removeFirst();
+            seriesRawRGB.removeFirst();
+        }
+
+        seriesRawR.addLast(null, r);
+        seriesRawG.addLast(null, g);
+        seriesRawB.addLast(null, b);
+        seriesRawRGB.addLast(null, (r + g + b) / 3);
+
+        rawPlot.redraw();
+    }
+
+    public void ConfigureRawPlot() {
+
+        double rangeBoundary = 255;
+        rawPlot.setRangeBoundaries(0, rangeBoundary, BoundaryMode.FIXED);
+
+        rawPlot.setDomainBoundaries(0, plotSize, BoundaryMode.FIXED);
+
+        // Red
+        seriesRawR = new SimpleXYSeries(
                 Collections.nCopies(plotSize, 0), // convert array to a list
                 SimpleXYSeries.ArrayFormat.Y_VALS_ONLY, // use array indices as x values and array values as y values
                 "Mean R" // title
         );
         LineAndPointFormatter seriesFormatterR = new LineAndPointFormatter(Color.RED, null, null, null);
-        plot.addSeries(seriesR, seriesFormatterR);
+        rawPlot.addSeries(seriesRawR, seriesFormatterR);
 
         // Green
-        seriesG = new SimpleXYSeries(
+        seriesRawG = new SimpleXYSeries(
                 Collections.nCopies(plotSize, 0), // convert array to a list
                 SimpleXYSeries.ArrayFormat.Y_VALS_ONLY, // use array indices as x values and array values as y values
                 "Mean G" // title
         );
         LineAndPointFormatter seriesFormatterG = new LineAndPointFormatter(Color.GREEN, null, null, null);
-        plot.addSeries(seriesG, seriesFormatterG);
+        rawPlot.addSeries(seriesRawG, seriesFormatterG);
 
         // Blue
-        seriesB = new SimpleXYSeries(
+        seriesRawB = new SimpleXYSeries(
                 Collections.nCopies(plotSize, 0), // convert array to a list
                 SimpleXYSeries.ArrayFormat.Y_VALS_ONLY, // use array indices as x values and array values as y values
                 "Mean B" // title
         );
         LineAndPointFormatter seriesFormatterB = new LineAndPointFormatter(Color.BLUE, null, null, null);
-        plot.addSeries(seriesB, seriesFormatterB);
+        rawPlot.addSeries(seriesRawB, seriesFormatterB);
 
         // All
-        seriesAll = new SimpleXYSeries(
+        seriesRawRGB = new SimpleXYSeries(
                 Collections.nCopies(plotSize, 0), // convert array to a list
                 SimpleXYSeries.ArrayFormat.Y_VALS_ONLY, // use array indices as x values and array values as y values
                 "Mean RBG" // title
         );
         LineAndPointFormatter seriesFormatterAll = new LineAndPointFormatter(Color.LTGRAY, null, null, null);
-        plot.addSeries(seriesAll, seriesFormatterAll);
+        rawPlot.addSeries(seriesRawRGB, seriesFormatterAll);
     }
 
 

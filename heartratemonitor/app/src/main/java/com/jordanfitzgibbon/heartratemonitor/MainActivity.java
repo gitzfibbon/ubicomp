@@ -12,12 +12,8 @@ import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.CameraBridgeViewBase;
 import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
-import org.opencv.core.Core;
 import org.opencv.core.Mat;
 import org.opencv.core.Scalar;
-
-import java.util.ArrayList;
-import java.util.Collections;
 
 public class MainActivity extends ActionBarActivity implements CameraBridgeViewBase.CvCameraViewListener2 {
 
@@ -51,9 +47,12 @@ public class MainActivity extends ActionBarActivity implements CameraBridgeViewB
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        // Set up the plots
         plotManager = new PlotManager(this);
-        plotManager.ConfigurePlots();
+        plotManager.ConfigureRawPlot();
+        plotManager.ConfigureFilteredPlot();
 
+        // Set up OpenCV
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         mOpenCvCameraView = (CameraBridgeViewBase) findViewById(R.id.OpenCvView);
         mOpenCvCameraView.setVisibility(SurfaceView.VISIBLE);
@@ -121,10 +120,13 @@ public class MainActivity extends ActionBarActivity implements CameraBridgeViewB
             this.heartRateMonitor = new HeartRateMonitor(inputFrame);
         }
 
-        this.heartRateMonitor.NewFrame(inputFrame);
+        this.heartRateMonitor.AddNewFrame(inputFrame);
 
         Scalar mean = this.heartRateMonitor.GetLastMean();
-        plotManager.UpdatePlots(mean.val[0], mean.val[1], mean.val[2]);
+        plotManager.UpdateRawPlot(mean.val[0], mean.val[1], mean.val[2]);
+
+        Scalar deMeanedMean = this.heartRateMonitor.GetLastMeanDeMeaned();
+        plotManager.UpdateFilteredPlot(deMeanedMean.val[0], deMeanedMean.val[1], deMeanedMean.val[2]);
 
         return this.heartRateMonitor.GetLastMat();
     }
