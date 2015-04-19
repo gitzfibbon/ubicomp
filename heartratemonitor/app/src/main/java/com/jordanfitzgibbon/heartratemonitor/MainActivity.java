@@ -126,7 +126,10 @@ public class MainActivity extends ActionBarActivity implements CameraBridgeViewB
         plotManager.UpdateRawPlot(mean.val[0], mean.val[1], mean.val[2]);
 
         Scalar deMeanedMean = this.heartRateMonitor.GetLastMeanDeMeaned();
-        plotManager.UpdateFilteredPlot(deMeanedMean.val[0], deMeanedMean.val[1], deMeanedMean.val[2]);
+        Scalar medianFiltered = this.heartRateMonitor.GetLastMedianFiltered();
+        plotManager.UpdateFilteredPlot(
+                deMeanedMean.val[0], deMeanedMean.val[1], deMeanedMean.val[2],
+                medianFiltered.val[0], medianFiltered.val[1], medianFiltered.val[2]);
 
         return this.heartRateMonitor.GetLastMat();
     }
