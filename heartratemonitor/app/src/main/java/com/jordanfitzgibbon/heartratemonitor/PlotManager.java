@@ -53,7 +53,7 @@ public class PlotManager {
 
     public void ConfigureFilteredPlot() {
 
-        double rangeBoundary = 20;
+        double rangeBoundary = 15;
         filteredPlot.setRangeBoundaries(-1 * rangeBoundary, rangeBoundary, BoundaryMode.FIXED);
         rawPlot.setDomainBoundaries(0, plotSize, BoundaryMode.FIXED);
 

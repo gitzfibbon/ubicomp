@@ -1,0 +1,21 @@
+This file contains decisions and assumptions for A2.
+
+INSTRUCTIONS
+1. Place your index finger over the device's camera
+2. Use a bright light source and aim it closely at the finger that is covering the camera
+3. Hold your finger and the light in the position for 5+ seconds
+
+CONFIGURATION SETTINGS
+
+RGB CHOICE
+After observing the change in R, G and B values when a finger is placed over the camera it appeared that green had the most pronounced fluctuations. Thus, after much experimentation I chose to use only the green values of the images to measure heart rate. This can be easily configured/changed in the code to use any combination of RGB. 
+
+MEDIAN FILTERING
+
+DE-MEANING
+I used the previous 30 recorded frames for de-meaning. This results in ~2 seconds of data at 15 fps.
+
+ZERO CROSSING
+
+INTERFACE
+
