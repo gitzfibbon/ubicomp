@@ -23,8 +23,10 @@ public class MainActivity extends ActionBarActivity implements CameraBridgeViewB
 
     private final String TAG = "HeartRateMonitor";
 
-    // OpenCV
+    private HeartRateMonitor heartRateMonitor;
     private PlotManager plotManager;
+
+    // OpenCV
     CameraBridgeViewBase mOpenCvCameraView;
     private BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(this) {
         @Override
@@ -42,9 +44,6 @@ public class MainActivity extends ActionBarActivity implements CameraBridgeViewB
             }
         }
     };
-
-    private final int RECENT_VALUES_SIZE = 300;
-    //private ArrayList<Mat> recentValues = new ArrayList<Mat>(Collections.nCopies(RECENT_VALUES_SIZE, new Mat()));
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -117,15 +116,16 @@ public class MainActivity extends ActionBarActivity implements CameraBridgeViewB
 
     @Override
     public Mat onCameraFrame(CameraBridgeViewBase.CvCameraViewFrame inputFrame) {
-        Mat mat = inputFrame.rgba();
-        //Imgproc.cvtColor(mat, mat, Imgproc.COLOR_RGBA2BGRA );
 
-        //int cannyThreshold = 15;
-        //Imgproc.Canny(mat, mat, cannyThreshold / 3, cannyThreshold);
+        if (this.heartRateMonitor == null) {
+            this.heartRateMonitor = new HeartRateMonitor(inputFrame);
+        }
 
-        Scalar mean = Core.mean(mat);
+        this.heartRateMonitor.NewFrame(inputFrame);
+
+        Scalar mean = this.heartRateMonitor.GetLastMean();
         plotManager.UpdatePlots(mean.val[0], mean.val[1], mean.val[2]);
 
-        return mat;
+        return this.heartRateMonitor.GetLastMat();
     }
 }
