@@ -17,13 +17,27 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal">
 
-
         <TextView
-            android:text="FOO"
-            android:id="@+id/textViewTop"
-            android:layout_width="wrap_content"
+            android:text="Instructions: Place index finger over camera and shine light on finger"
+            android:id="@+id/textViewInstructions"
+            android:layout_width="200dp"
             android:layout_height="wrap_content" />
 
+        <TextView
+            android:text="SETTINGS"
+            android:id="@+id/textViewSettings"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/textViewInstructions"/>
+
+        <TextView
+            android:text="Heart Rate: 203"
+            android:textSize="30dp"
+            android:id="@+id/textViewHeartRate"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/textViewSettings"
+        />
 
         <org.opencv.android.JavaCameraView
             android:layout_alignParentRight="true"
@@ -34,7 +48,7 @@
             opencv:show_fps="true"
             opencv:camera_id="front" />
 
-        </RelativeLayout>
+    </RelativeLayout>
 
     <com.androidplot.xy.XYPlot
         android:id="@+id/filteredPlot"
