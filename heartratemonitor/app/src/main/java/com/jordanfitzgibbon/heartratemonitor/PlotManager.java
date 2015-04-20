@@ -52,7 +52,7 @@ public class PlotManager {
     public void UpdateFFTPlot(float[] fftMags) {
 
         ArrayList<Float> newSeriesValues = new ArrayList<>();
-        for (int i=0; i<fftMags.length; i++) {
+        for (int i=fftMags.length/2; i<fftMags.length; i++) {
             newSeriesValues.add(fftMags[i]);
         }
 
@@ -62,14 +62,14 @@ public class PlotManager {
 
     public void ConfigureFFTPlot(int fftSize) {
 
-        //double rangeBoundary = 10;
-        //filteredPlot.setRangeBoundaries(-1 * rangeBoundary, rangeBoundary, BoundaryMode.FIXED);
+        double rangeBoundary = 10;
+        fftPlot.setRangeBoundaries(0, rangeBoundary, BoundaryMode.FIXED);
         //fftPlot.setDomainBoundaries(0, plotSize, BoundaryMode.FIXED);
 
         seriesFFT = new SimpleXYSeries(
                 Collections.nCopies(fftSize, 0), // convert array to a list
                 SimpleXYSeries.ArrayFormat.Y_VALS_ONLY, // use array indices as x values and array values as y values
-                "" // title
+                "Frequency G" // title
         );
         LineAndPointFormatter seriesFormatter = new LineAndPointFormatter(Color.GREEN, null, null, null);
         fftPlot.addSeries(seriesFFT, seriesFormatter);

@@ -24,7 +24,7 @@ public class HeartRateMonitor {
     private ArrayList<Scalar> deMeanedMeans;
     private ArrayList<Scalar> medianFiltered;
 
-    public static final int FFT_SIZE = 1024;
+    public static final int FFT_SIZE = 128;
     private float spec[]  = new float[FFT_SIZE];
 
     public HeartRateMonitor(CameraBridgeViewBase.CvCameraViewFrame firstFrame) {
@@ -144,8 +144,8 @@ public class HeartRateMonitor {
     // Use only one color channel
     public float[] FFT() {
 
-        int sampleSize = RECENT_VALUES_SIZE;
-        int sampleRate = 15;
+        int sampleSize = 100;
+        int sampleRate = 10;
 
         // Start by using de-meaned, median filtered green values
 
@@ -162,11 +162,10 @@ public class HeartRateMonitor {
 
         }
 
-//        fft.spectrum(samples_float,spec);
         FFT fft = new FFT(FFT_SIZE, sampleRate);
         fft.forward(fftInput);
 
-        float[] fft_cpx = fft.getSpectrum();
+        // float[] fft_cpx = fft.getSpectrum();
         float[] imag = fft.getImaginaryPart();
         float[] real = fft.getRealPart();
         float[] mag = new float[FFT_SIZE];

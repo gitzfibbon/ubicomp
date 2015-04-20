@@ -1,5 +1,6 @@
 package com.jordanfitzgibbon.heartratemonitor;
 
+
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -14,6 +15,9 @@ import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
 import org.opencv.core.Mat;
 import org.opencv.core.Scalar;
+
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class MainActivity extends ActionBarActivity implements CameraBridgeViewBase.CvCameraViewListener2 {
 
@@ -58,6 +62,16 @@ public class MainActivity extends ActionBarActivity implements CameraBridgeViewB
         mOpenCvCameraView = (CameraBridgeViewBase) findViewById(R.id.OpenCvView);
         mOpenCvCameraView.setVisibility(SurfaceView.VISIBLE);
         mOpenCvCameraView.setCvCameraViewListener(this);
+
+        // Set up a timer for recalculating heart rate
+        int delayMs = 2000;
+        HRMTimerTask task = new HRMTimerTask(this);
+        new Timer().scheduleAtFixedRate(task, 5000, delayMs);
+    }
+
+    public void RunTimerTask() {
+        float[] fftMags = this.heartRateMonitor.FFT();
+        this.plotManager.UpdateFFTPlot(fftMags);
     }
 
     @Override
@@ -132,8 +146,8 @@ public class MainActivity extends ActionBarActivity implements CameraBridgeViewB
                 deMeanedMean.val[0], deMeanedMean.val[1], deMeanedMean.val[2],
                 medianFiltered.val[0], medianFiltered.val[1], medianFiltered.val[2]);
 
-        float[] fftMags = this.heartRateMonitor.FFT();
-        this.plotManager.UpdateFFTPlot(fftMags);
+//        float[] fftMags = this.heartRateMonitor.FFT();
+//        this.plotManager.UpdateFFTPlot(fftMags);
 
         return this.heartRateMonitor.GetLastMat();
     }

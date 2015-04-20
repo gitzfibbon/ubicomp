@@ -12,6 +12,6 @@
     <dimen name="legend_text_font_size">10dp</dimen>
     <dimen name="marginTop">5dp</dimen>
     <dimen name="marginLeft">10dp</dimen>
-    <dimen name="marginBottom">20dp</dimen>
+    <dimen name="marginBottom">15dp</dimen>
     <dimen name="marginRight">5dp</dimen>
 </resources>
