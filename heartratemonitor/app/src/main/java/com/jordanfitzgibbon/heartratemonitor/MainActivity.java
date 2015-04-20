@@ -51,6 +51,7 @@ public class MainActivity extends ActionBarActivity implements CameraBridgeViewB
         plotManager = new PlotManager(this);
         plotManager.ConfigureRawPlot();
         plotManager.ConfigureFilteredPlot();
+        plotManager.ConfigureFFTPlot(HeartRateMonitor.FFT_SIZE);
 
         // Set up OpenCV
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
@@ -130,6 +131,9 @@ public class MainActivity extends ActionBarActivity implements CameraBridgeViewB
         plotManager.UpdateFilteredPlot(
                 deMeanedMean.val[0], deMeanedMean.val[1], deMeanedMean.val[2],
                 medianFiltered.val[0], medianFiltered.val[1], medianFiltered.val[2]);
+
+        float[] fftMags = this.heartRateMonitor.FFT();
+        this.plotManager.UpdateFFTPlot(fftMags);
 
         return this.heartRateMonitor.GetLastMat();
     }

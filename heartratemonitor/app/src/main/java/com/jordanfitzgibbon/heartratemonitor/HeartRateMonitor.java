@@ -5,17 +5,27 @@ import org.opencv.core.Core;
 import org.opencv.core.Mat;
 import org.opencv.core.Scalar;
 
+import com.badlogic.gdx.audio.analysis.FFT;
+
 import java.util.ArrayList;
 import java.util.Collections;
 
 // This class manages all the frames, does filtering and measures heart rate
 public class HeartRateMonitor {
 
+    private final int RED = 0;
+    private final int GREEN = 1;
+    private final int BLUE = 2;
+
+
     private final int RECENT_VALUES_SIZE = 150; // FPS is ~15 so this is ~10 seconds
     private ArrayList<CameraBridgeViewBase.CvCameraViewFrame> frames;
     private ArrayList<Mat> mats;
     private ArrayList<Scalar> deMeanedMeans;
     private ArrayList<Scalar> medianFiltered;
+
+    public static final int FFT_SIZE = 1024;
+    private float spec[]  = new float[FFT_SIZE];
 
     public HeartRateMonitor(CameraBridgeViewBase.CvCameraViewFrame firstFrame) {
 
@@ -72,9 +82,9 @@ public class HeartRateMonitor {
         Scalar mean = this.GetLastMean(); // Initialize to the last mean
         for (int i = RECENT_VALUES_SIZE - meanWindowSize; i < RECENT_VALUES_SIZE; i++) {
             mean = Core.mean(mats.get(i));
-            sumR += mean.val[0];
-            sumG += mean.val[1];
-            sumB += mean.val[2];
+            sumR += mean.val[RED];
+            sumG += mean.val[GREEN];
+            sumB += mean.val[BLUE];
         }
 
         double meanR = sumR / meanWindowSize;
@@ -82,7 +92,7 @@ public class HeartRateMonitor {
         double meanB = sumB / meanWindowSize;
 
         Scalar latestMean = this.GetLastMean();
-        mean.set(new double[] {latestMean.val[0] - meanR, latestMean.val[1] - meanG, latestMean.val[2] - meanB});
+        mean.set(new double[] {latestMean.val[RED] - meanR, latestMean.val[GREEN] - meanG, latestMean.val[BLUE] - meanB});
 
         return mean;
     }
@@ -101,9 +111,9 @@ public class HeartRateMonitor {
         ArrayList<Double> B = new ArrayList<>(medianSize);
         for (int i = 0; i < medianSize ; i++)
         {
-            R.add(this.deMeanedMeans.get(RECENT_VALUES_SIZE - i - 1).val[0]);
-            G.add(this.deMeanedMeans.get(RECENT_VALUES_SIZE - i - 1).val[1]);
-            B.add(this.deMeanedMeans.get(RECENT_VALUES_SIZE - i - 1).val[2]);
+            R.add(this.deMeanedMeans.get(RECENT_VALUES_SIZE - i - 1).val[RED]);
+            G.add(this.deMeanedMeans.get(RECENT_VALUES_SIZE - i - 1).val[GREEN]);
+            B.add(this.deMeanedMeans.get(RECENT_VALUES_SIZE - i - 1).val[BLUE]);
         }
         Collections.sort(R);
         Collections.sort(G);
@@ -113,9 +123,9 @@ public class HeartRateMonitor {
         if (medianSize % 2 == 1) {
             int middleIndex = (medianSize - 1) / 2;
 
-            medianValues.val[0] = R.get(middleIndex);
-            medianValues.val[1] = G.get(middleIndex);
-            medianValues.val[2] = B.get(middleIndex);
+            medianValues.val[RED] = R.get(middleIndex);
+            medianValues.val[GREEN] = G.get(middleIndex);
+            medianValues.val[BLUE] = B.get(middleIndex);
             return medianValues;
         }
         else
@@ -123,13 +133,49 @@ public class HeartRateMonitor {
             int lowIndex = (medianSize / 2) -1;
             int highIndex = medianSize / 2;
 
-            medianValues.val[0] = (R.get(lowIndex) + R.get(highIndex)) / 2;
-            medianValues.val[1] = (G.get(lowIndex) + G.get(highIndex)) / 2;
-            medianValues.val[2] = (B.get(lowIndex) + B.get(highIndex)) / 2;
+            medianValues.val[RED] = (R.get(lowIndex) + R.get(highIndex)) / 2;
+            medianValues.val[GREEN] = (G.get(lowIndex) + G.get(highIndex)) / 2;
+            medianValues.val[BLUE] = (B.get(lowIndex) + B.get(highIndex)) / 2;
 
             return medianValues;
         }
+    }
 
+    // Use only one color channel
+    public float[] FFT() {
+
+        int sampleSize = RECENT_VALUES_SIZE;
+        int sampleRate = 15;
+
+        // Start by using de-meaned, median filtered green values
+
+        float[] fftInput = new float[FFT_SIZE];
+
+        // Fill up fftInput and zero pad
+        for (int i=0; i < FFT_SIZE; i++) {
+            if (i < sampleSize) {
+                fftInput[i] = (float)this.medianFiltered.get(RECENT_VALUES_SIZE - sampleSize + i).val[GREEN];
+            }
+            else {
+                fftInput[i] = 0;
+            }
+
+        }
+
+//        fft.spectrum(samples_float,spec);
+        FFT fft = new FFT(FFT_SIZE, sampleRate);
+        fft.forward(fftInput);
+
+        float[] fft_cpx = fft.getSpectrum();
+        float[] imag = fft.getImaginaryPart();
+        float[] real = fft.getRealPart();
+        float[] mag = new float[FFT_SIZE];
+
+        for (int i = 0; i < FFT_SIZE; i++) {
+            mag[i] = (float)Math.sqrt((real[i] * real[i]) + (imag[i] * imag[i]));
+        }
+
+        return mag;
     }
 
 }

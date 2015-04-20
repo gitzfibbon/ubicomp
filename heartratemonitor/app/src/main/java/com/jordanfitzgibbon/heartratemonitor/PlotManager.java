@@ -8,9 +8,15 @@ import com.androidplot.xy.LineAndPointFormatter;
 import com.androidplot.xy.SimpleXYSeries;
 import com.androidplot.xy.XYPlot;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 
 public class PlotManager {
+
+    private final int RED = 0;
+    private final int GREEN = 1;
+    private final int BLUE = 2;
 
     private final int plotSize = 200;
 
@@ -34,9 +40,39 @@ public class PlotManager {
     SimpleXYSeries seriesRawB;
     SimpleXYSeries seriesRawRGB;
 
+    XYPlot fftPlot;
+    SimpleXYSeries seriesFFT;
+
     public PlotManager(ActionBarActivity parent) {
         this.rawPlot = (XYPlot)parent.findViewById(R.id.rawPlot);
         this.filteredPlot = (XYPlot)parent.findViewById(R.id.filteredPlot);
+        this.fftPlot = (XYPlot)parent.findViewById(R.id.fftPlot);
+    }
+
+    public void UpdateFFTPlot(float[] fftMags) {
+
+        ArrayList<Float> newSeriesValues = new ArrayList<>();
+        for (int i=0; i<fftMags.length; i++) {
+            newSeriesValues.add(fftMags[i]);
+        }
+
+        seriesFFT.setModel(newSeriesValues, SimpleXYSeries.ArrayFormat.Y_VALS_ONLY);
+        fftPlot.redraw();
+    }
+
+    public void ConfigureFFTPlot(int fftSize) {
+
+        //double rangeBoundary = 10;
+        //filteredPlot.setRangeBoundaries(-1 * rangeBoundary, rangeBoundary, BoundaryMode.FIXED);
+        //fftPlot.setDomainBoundaries(0, plotSize, BoundaryMode.FIXED);
+
+        seriesFFT = new SimpleXYSeries(
+                Collections.nCopies(fftSize, 0), // convert array to a list
+                SimpleXYSeries.ArrayFormat.Y_VALS_ONLY, // use array indices as x values and array values as y values
+                "" // title
+        );
+        LineAndPointFormatter seriesFormatter = new LineAndPointFormatter(Color.GREEN, null, null, null);
+        fftPlot.addSeries(seriesFFT, seriesFormatter);
     }
 
     public void UpdateFilteredPlot(

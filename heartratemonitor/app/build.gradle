@@ -30,5 +30,7 @@ dependencies {
     compile 'com.android.support:appcompat-v7:22.0.0'
     compile(name:'androidplot-core-0.6.2-SNAPSHOT', ext:'aar')
     compile project(':libraries:opencv')
+    compile files('libs/gdx-audio.jar')
+    compile files('libs/gdx.jar')
 
 }
