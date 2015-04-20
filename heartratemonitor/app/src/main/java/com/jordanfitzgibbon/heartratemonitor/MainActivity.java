@@ -81,7 +81,7 @@ public class MainActivity extends ActionBarActivity implements CameraBridgeViewB
         mOpenCvCameraView.setVisibility(SurfaceView.VISIBLE);
         mOpenCvCameraView.setCvCameraViewListener(this);
 
-        textViewFps = (TextView)findViewById(R.id.textViewFps);
+        //textViewFps = (TextView)findViewById(R.id.textViewFps);
         textViewSettings = (TextView)findViewById(R.id.textViewSettings);
         textViewHeartRate = (TextView)findViewById(R.id.textViewHeartRate);
     }
@@ -157,9 +157,11 @@ public class MainActivity extends ActionBarActivity implements CameraBridgeViewB
 
         Scalar deMeanedMean = this.heartRateMonitor.GetLastMeanDeMeaned();
         Scalar medianFiltered = this.heartRateMonitor.GetLastMedianFiltered();
+        boolean isPeak = heartRateMonitor.DetectPeak();
         plotManager.UpdateFilteredPlot(
                 deMeanedMean.val[0], deMeanedMean.val[1], deMeanedMean.val[2],
-                medianFiltered.val[0], medianFiltered.val[1], medianFiltered.val[2]);
+                medianFiltered.val[0], medianFiltered.val[1], medianFiltered.val[2],
+                isPeak);
 
         this.sampleCount++; // increment the sample count
 

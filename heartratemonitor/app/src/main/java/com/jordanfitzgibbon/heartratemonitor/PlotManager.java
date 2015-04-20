@@ -3,13 +3,13 @@ package com.jordanfitzgibbon.heartratemonitor;
 import android.graphics.Color;
 import android.support.v7.app.ActionBarActivity;
 
+import com.androidplot.util.PixelUtils;
 import com.androidplot.xy.BoundaryMode;
 import com.androidplot.xy.LineAndPointFormatter;
 import com.androidplot.xy.SimpleXYSeries;
 import com.androidplot.xy.XYPlot;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -34,7 +34,9 @@ public class PlotManager {
 //    SimpleXYSeries seriesMedianB;
 //    SimpleXYSeries seriesMedianRGB;
 
-    SimpleXYSeries seriesPeakDetectionThreshold; // Used to draw a horizontal line for peak detection threshold
+    // Used for peak detection
+    SimpleXYSeries seriesPeakDetectionThreshold;
+    SimpleXYSeries seriesPeaks;
 
     // Plots raw RGB data (or means of the full frame)
     XYPlot rawPlot;
@@ -80,10 +82,11 @@ public class PlotManager {
 
     public void UpdateFilteredPlot(
             double meanR, double meanG, double meanB,
-            double medianR, double medianG, double medianB) {
+            double medianR, double medianG, double medianB,
+            boolean isPeak) {
 
         // Remove values from the series. Assume all seriesDeMeaned are the same size so use seriesDeMeaned to do this check.
-        if (seriesDeMeanedR.size() >=  plotSize) {
+        if (seriesDeMeanedR.size() >= plotSize) {
             seriesDeMeanedR.removeFirst();
 //            seriesDeMeanedG.removeFirst();
 //            seriesDeMeanedB.removeFirst();
@@ -92,6 +95,8 @@ public class PlotManager {
             seriesMedianR.removeFirst();
 //            seriesMedianG.removeFirst();
 //            seriesMedianB.removeFirst();
+
+            seriesPeaks.removeFirst();
         }
 
         seriesDeMeanedR.addLast(null, meanR);
@@ -102,6 +107,13 @@ public class PlotManager {
         seriesMedianR.addLast(null, medianR);
 //        seriesMedianG.addLast(null, medianG);
 //        seriesMedianB.addLast(null, medianB);
+
+        if (isPeak) {
+            seriesPeaks.setY(0, this.plotSize - 2);
+        } else {
+            seriesPeaks.setY(100, this.plotSize - 2);
+        }
+        seriesPeaks.addLast(null, 100);
 
         filteredPlot.redraw();
     }
@@ -167,14 +179,24 @@ public class PlotManager {
 //        LineAndPointFormatter seriesFormatterAll = new LineAndPointFormatter(Color.LTGRAY, null, null, null);
 //        filteredPlot.addSeries(seriesDeMeanedRGB, seriesFormatterAll);
 
-        List<Double> thresholdUpperNumbers = Collections.nCopies(this.plotSize,HeartRateMonitor.PEAK_DETECTION_THRESHOLD);
+        List<Double> thresholdNumbers = Collections.nCopies(this.plotSize,HeartRateMonitor.PEAK_DETECTION_THRESHOLD);
         seriesPeakDetectionThreshold = new SimpleXYSeries(
-                thresholdUpperNumbers,
+                thresholdNumbers,
                 SimpleXYSeries.ArrayFormat.Y_VALS_ONLY, // use array indices as x values and array values as y values
                 "Threshold " + HeartRateMonitor.PEAK_DETECTION_THRESHOLD // series title
         );
         LineAndPointFormatter thresholdFormatter = new LineAndPointFormatter(Color.WHITE, null, null, null);
         filteredPlot.addSeries(seriesPeakDetectionThreshold, thresholdFormatter);
+
+        List<Double> peakDetectionDotNumbers = Collections.nCopies(this.plotSize,1000.0); // Set to some high value that will be off the chart
+        seriesPeaks = new SimpleXYSeries(
+                peakDetectionDotNumbers,
+                SimpleXYSeries.ArrayFormat.Y_VALS_ONLY, // use array indices as x values and array values as y values
+                "Peaks" + HeartRateMonitor.PEAK_DETECTION_THRESHOLD // series title
+        );
+        LineAndPointFormatter peakFormatter = new LineAndPointFormatter(null, Color.WHITE, null, null);
+        peakFormatter.getVertexPaint().setStrokeWidth(PixelUtils.dpToPix(5));
+        filteredPlot.addSeries(seriesPeaks, peakFormatter);
     }
 
 

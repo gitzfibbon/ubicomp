@@ -23,7 +23,7 @@ public class HeartRateMonitor {
     private final int BLUE = 2;
 
 
-    private final int RECENT_VALUES_SIZE = 150; // FPS is ~15 so this is ~10 seconds
+    private final int RECENT_VALUES_SIZE = 300; // FPS is ~15 so this is ~10 seconds
     private ArrayList<CameraBridgeViewBase.CvCameraViewFrame> frames;
     private ArrayList<Mat> mats;
     private ArrayList<Scalar> deMeanedMeans;
@@ -33,7 +33,7 @@ public class HeartRateMonitor {
     private float spec[]  = new float[FFT_SIZE];
 
     // A sample must change slope and cross this threshold to be considered a heartbeat
-    public static final double PEAK_DETECTION_THRESHOLD = -0.9;
+    public static final double PEAK_DETECTION_THRESHOLD = -0.8;
 
     public HeartRateMonitor(CameraBridgeViewBase.CvCameraViewFrame firstFrame) {
 
@@ -184,6 +184,10 @@ public class HeartRateMonitor {
         return mag;
     }
 
+    public boolean DetectPeak() {
+        return this.DetectPeak(this.RECENT_VALUES_SIZE - 3, this.RECENT_VALUES_SIZE - 2, this.RECENT_VALUES_SIZE -1);
+    }
+
     // Use the de-meaned values for peak detection
     public boolean DetectPeak(int previousX, int x, int nextX)
     {
@@ -218,7 +222,7 @@ public class HeartRateMonitor {
     }
 
     public int GetHeartRate(double FPS) {
-        int heartRate = this.GetPeaks(10, FPS) * 6;
+        int heartRate = this.GetPeaks(12, FPS) * 5;
 
         if (heartRate < 45 || heartRate > 220)
         {
