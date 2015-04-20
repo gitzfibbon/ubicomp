@@ -67,7 +67,7 @@ public class PlotManager {
 
     public void ConfigureFFTPlot(int fftSize) {
 
-        double rangeBoundary = 20;
+        double rangeBoundary = 30;
         fftPlot.setRangeBoundaries(0, rangeBoundary, BoundaryMode.FIXED);
         //fftPlot.setDomainBoundaries(0, plotSize, BoundaryMode.FIXED);
 
