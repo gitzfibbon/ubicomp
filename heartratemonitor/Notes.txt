@@ -8,14 +8,20 @@ INSTRUCTIONS
 CONFIGURATION SETTINGS
 
 RGB CHOICE
-After observing the change in R, G and B values when a finger is placed over the camera it appeared that green had the most pronounced fluctuations. Thus, after much experimentation I chose to use only the green values of the images to measure heart rate. This can be easily configured/changed in the code to use any combination of RGB. 
+After observing the change in R, G and B values when a finger is placed over the camera it appeared that red had the most pronounced fluctuations.
+Thus, after much experimentation I chose to use only those values of the images to measure heart rate. This can be easily configured/changed in the code to use any combination of RGB.
 
 MEDIAN FILTERING
+I did median filtering and plotted it on the UI. However, it did not seem very useful given the small sample rate of 10-15 fps.
+I did not use any median filtered values in my calculations for heart rate.
 
 DE-MEANING
 I used the previous 30 recorded frames for de-meaning. This results in ~2 seconds of data at 15 fps.
 
-ZERO CROSSING
+PEAK DETECTION
+I implement simple peak detection. A peak occurs when the slope of the line changes from negative to positive (a 'valley') and the valley is under
+the threshold value of -1.0
+I used the unfiltered red channel mean of the frame and de-meaned it, then applied peak detection.
 
 INTERFACE
 

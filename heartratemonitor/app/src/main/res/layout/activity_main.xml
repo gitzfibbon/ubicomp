@@ -26,7 +26,15 @@
             android:layout_height="wrap_content" />
 
         <TextView
-            android:text="SETTINGS"
+            android:text="FPS: -"
+            android:id="@+id/textViewFps"
+            android:textSize="15dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/textViewInstructions"/>
+
+        <TextView
+            android:text=""
             android:id="@+id/textViewSettings"
             android:textSize="15dp"
             android:layout_width="wrap_content"
@@ -34,7 +42,7 @@
             android:layout_below="@id/textViewInstructions"/>
 
         <TextView
-            android:text="Heart Rate: 203"
+            android:text="Heart Rate: -"
             android:textSize="30dp"
             android:id="@+id/textViewHeartRate"
             android:layout_width="wrap_content"

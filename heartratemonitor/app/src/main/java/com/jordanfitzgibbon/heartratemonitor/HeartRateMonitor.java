@@ -1,5 +1,7 @@
 package com.jordanfitzgibbon.heartratemonitor;
 
+import android.util.Log;
+
 import org.opencv.android.CameraBridgeViewBase;
 import org.opencv.core.Core;
 import org.opencv.core.Mat;
@@ -7,11 +9,14 @@ import org.opencv.core.Scalar;
 
 import com.badlogic.gdx.audio.analysis.FFT;
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Collections;
 
 // This class manages all the frames, does filtering and measures heart rate
 public class HeartRateMonitor {
+
+    private final String TAG = "HeartRateMonitor";
 
     private final int RED = 0;
     private final int GREEN = 1;
@@ -26,6 +31,9 @@ public class HeartRateMonitor {
 
     public static final int FFT_SIZE = 128;
     private float spec[]  = new float[FFT_SIZE];
+
+    // A sample must change slope and cross this threshold to be considered a heartbeat
+    public static final double PEAK_DETECTION_THRESHOLD = -0.9;
 
     public HeartRateMonitor(CameraBridgeViewBase.CvCameraViewFrame firstFrame) {
 
@@ -142,19 +150,18 @@ public class HeartRateMonitor {
     }
 
     // Use only one color channel
-    public float[] FFT() {
+    public float[] FFT(int sampleRate) {
 
         int sampleSize = 100;
-        int sampleRate = 10;
 
-        // Start by using de-meaned, median filtered green values
+        // Start by using de-meaned, median filtered values
 
         float[] fftInput = new float[FFT_SIZE];
 
         // Fill up fftInput and zero pad
         for (int i=0; i < FFT_SIZE; i++) {
             if (i < sampleSize) {
-                fftInput[i] = (float)this.medianFiltered.get(RECENT_VALUES_SIZE - sampleSize + i).val[GREEN];
+                fftInput[i] = (float)this.medianFiltered.get(RECENT_VALUES_SIZE - sampleSize + i).val[RED];
             }
             else {
                 fftInput[i] = 0;
@@ -175,6 +182,51 @@ public class HeartRateMonitor {
         }
 
         return mag;
+    }
+
+    // Use the de-meaned values for peak detection
+    public boolean DetectPeak(int previousX, int x, int nextX)
+    {
+        double previousSlope = this.deMeanedMeans.get(x).val[RED] - this.deMeanedMeans.get(previousX).val[RED];
+        double nextSlope = this.deMeanedMeans.get(nextX).val[RED] - this.deMeanedMeans.get(x).val[RED];
+
+        if (previousSlope < 0 && nextSlope > 0 && this.deMeanedMeans.get(x).val[RED] <= this.PEAK_DETECTION_THRESHOLD) {
+            // this is a peak
+            return true;
+        }
+
+        return false;
+    }
+
+    private int GetPeaks(int windowInSeconds, double FPS) {
+
+        int totalSamples = (int)Math.round(windowInSeconds * FPS);
+        totalSamples = Math.min(RECENT_VALUES_SIZE, totalSamples);
+        int totalPeaks = 0;
+
+        Log.d(TAG, "Total Samples: " + totalSamples);
+
+        for (int i = 0; i<totalSamples-2; i++) {
+            if ( this.DetectPeak(RECENT_VALUES_SIZE-i-3,RECENT_VALUES_SIZE-i-2,RECENT_VALUES_SIZE-1) ) {
+                totalPeaks++;
+            }
+        }
+
+        Log.d(TAG, "Total Peaks in " + windowInSeconds + " seconds: " + totalPeaks);
+
+        return totalPeaks;
+    }
+
+    public int GetHeartRate(double FPS) {
+        int heartRate = this.GetPeaks(10, FPS) * 6;
+
+        if (heartRate < 45 || heartRate > 220)
+        {
+            // There is no useful heart rate data
+            return 0;
+        }
+
+        return  heartRate;
     }
 
 }

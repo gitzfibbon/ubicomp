@@ -8,6 +8,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.SurfaceView;
 import android.view.WindowManager;
+import android.widget.TextView;
 
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.CameraBridgeViewBase;
@@ -15,9 +16,6 @@ import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
 import org.opencv.core.Mat;
 import org.opencv.core.Scalar;
-
-import java.util.Timer;
-import java.util.TimerTask;
 
 public class MainActivity extends ActionBarActivity implements CameraBridgeViewBase.CvCameraViewListener2 {
 
@@ -45,6 +43,26 @@ public class MainActivity extends ActionBarActivity implements CameraBridgeViewB
         }
     };
 
+    // For keeping track of time
+    long lastUpdateTime;
+
+    // How often to refresh the FFT and heart rate
+    private final int refreshIntervalMs = 2000;
+
+    // Keeps track of how many samples were collected in the current interval
+    private int sampleCount = 0;
+
+    // Keeps track of the average fps from the previous interval
+    // Initialize to 10 but it will get updated every interval
+    private double FPS = 10;
+
+    private int heartRate = 0;
+
+    // Textviews that we will update
+    private TextView textViewFps;
+    private TextView textViewSettings;
+    private TextView textViewHeartRate;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         Log.d(TAG, "onCreate");
@@ -63,21 +81,18 @@ public class MainActivity extends ActionBarActivity implements CameraBridgeViewB
         mOpenCvCameraView.setVisibility(SurfaceView.VISIBLE);
         mOpenCvCameraView.setCvCameraViewListener(this);
 
-        // Set up a timer for recalculating heart rate
-        int delayMs = 2000;
-        HRMTimerTask task = new HRMTimerTask(this);
-        new Timer().scheduleAtFixedRate(task, 5000, delayMs);
-    }
-
-    public void RunTimerTask() {
-        float[] fftMags = this.heartRateMonitor.FFT();
-        this.plotManager.UpdateFFTPlot(fftMags);
+        textViewFps = (TextView)findViewById(R.id.textViewFps);
+        textViewSettings = (TextView)findViewById(R.id.textViewSettings);
+        textViewHeartRate = (TextView)findViewById(R.id.textViewHeartRate);
     }
 
     @Override
     protected  void onResume() {
         super.onResume();
         OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_2_4_6, this, mLoaderCallback);
+
+        // Set up a timer for recalculating heart rate
+        this.lastUpdateTime = System.nanoTime();
     }
 
     @Override
@@ -146,9 +161,36 @@ public class MainActivity extends ActionBarActivity implements CameraBridgeViewB
                 deMeanedMean.val[0], deMeanedMean.val[1], deMeanedMean.val[2],
                 medianFiltered.val[0], medianFiltered.val[1], medianFiltered.val[2]);
 
-//        float[] fftMags = this.heartRateMonitor.FFT();
-//        this.plotManager.UpdateFFTPlot(fftMags);
+        this.sampleCount++; // increment the sample count
 
+        long nanoTime = System.nanoTime();
+        if (this.ConvertNanoToMs(nanoTime - lastUpdateTime) >= this.refreshIntervalMs) {
+            float[] fftMags = this.heartRateMonitor.FFT((int)Math.round(this.FPS));
+            this.plotManager.UpdateFFTPlot(fftMags);
+
+            // update the previous FPS
+            this.FPS = this.sampleCount / (double)(this.refreshIntervalMs / 1000);
+            this.sampleCount = 0;
+
+            Log.d(TAG, "FPS: " + this.FPS);
+
+            // Get heart rate
+            this.heartRate = heartRateMonitor.GetHeartRate(this.FPS);
+            Log.d(TAG, "Heart Rate: " + heartRate);
+
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    textViewHeartRate.setText("Heart Rate: " + heartRate);
+                }
+            });
+
+            this.lastUpdateTime = nanoTime;
+        }
         return this.heartRateMonitor.GetLastMat();
+    }
+
+    private int ConvertNanoToMs(long nanoTime) {
+        return (int) nanoTime / 1000000;
     }
 }

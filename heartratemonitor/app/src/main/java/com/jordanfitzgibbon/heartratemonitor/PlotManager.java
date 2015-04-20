@@ -11,6 +11,7 @@ import com.androidplot.xy.XYPlot;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 
 public class PlotManager {
 
@@ -23,15 +24,17 @@ public class PlotManager {
     XYPlot filteredPlot;
 
     // Plots de-meaned values
-//    SimpleXYSeries seriesDeMeanedR;
-    SimpleXYSeries seriesDeMeanedG;
+    SimpleXYSeries seriesDeMeanedR;
+//    SimpleXYSeries seriesDeMeanedG;
 //    SimpleXYSeries seriesDeMeanedB;
 
     // Plots median filtered values
-//    SimpleXYSeries seriesMedianR;
-    SimpleXYSeries seriesMedianG;
+    SimpleXYSeries seriesMedianR;
+//    SimpleXYSeries seriesMedianG;
 //    SimpleXYSeries seriesMedianB;
 //    SimpleXYSeries seriesMedianRGB;
+
+    SimpleXYSeries seriesPeakDetectionThreshold; // Used to draw a horizontal line for peak detection threshold
 
     // Plots raw RGB data (or means of the full frame)
     XYPlot rawPlot;
@@ -62,16 +65,16 @@ public class PlotManager {
 
     public void ConfigureFFTPlot(int fftSize) {
 
-        double rangeBoundary = 10;
+        double rangeBoundary = 20;
         fftPlot.setRangeBoundaries(0, rangeBoundary, BoundaryMode.FIXED);
         //fftPlot.setDomainBoundaries(0, plotSize, BoundaryMode.FIXED);
 
         seriesFFT = new SimpleXYSeries(
                 Collections.nCopies(fftSize, 0), // convert array to a list
                 SimpleXYSeries.ArrayFormat.Y_VALS_ONLY, // use array indices as x values and array values as y values
-                "Frequency G" // title
+                "Frequency R" // title
         );
-        LineAndPointFormatter seriesFormatter = new LineAndPointFormatter(Color.GREEN, null, null, null);
+        LineAndPointFormatter seriesFormatter = new LineAndPointFormatter(Color.RED, null, null, null);
         fftPlot.addSeries(seriesFFT, seriesFormatter);
     }
 
@@ -79,25 +82,25 @@ public class PlotManager {
             double meanR, double meanG, double meanB,
             double medianR, double medianG, double medianB) {
 
-        // Remove values from the series. Assume all seriesDeMeanedG are the same size so use seriesDeMeanedG to do this check.
-        if (seriesDeMeanedG.size() >=  plotSize) {
-//            seriesDeMeanedR.removeFirst();
-            seriesDeMeanedG.removeFirst();
+        // Remove values from the series. Assume all seriesDeMeaned are the same size so use seriesDeMeaned to do this check.
+        if (seriesDeMeanedR.size() >=  plotSize) {
+            seriesDeMeanedR.removeFirst();
+//            seriesDeMeanedG.removeFirst();
 //            seriesDeMeanedB.removeFirst();
 //            seriesDeMeanedRGB.removeFirst();
 //
-//            seriesMedianR.removeFirst();
-            seriesMedianG.removeFirst();
+            seriesMedianR.removeFirst();
+//            seriesMedianG.removeFirst();
 //            seriesMedianB.removeFirst();
         }
 
-//        seriesDeMeanedR.addLast(null, meanR);
-        seriesDeMeanedG.addLast(null, meanG);
+        seriesDeMeanedR.addLast(null, meanR);
+//        seriesDeMeanedG.addLast(null, meanG);
 //        seriesDeMeanedB.addLast(null, meanB);
 //        seriesDeMeanedRGB.addLast(null, (meanR + meanG + meanB) / 3);
 //
-//        seriesMedianR.addLast(null, medianR);
-        seriesMedianG.addLast(null, medianG);
+        seriesMedianR.addLast(null, medianR);
+//        seriesMedianG.addLast(null, medianG);
 //        seriesMedianB.addLast(null, medianB);
 
         filteredPlot.redraw();
@@ -106,39 +109,47 @@ public class PlotManager {
     // Note: only plot green values
     public void ConfigureFilteredPlot() {
 
-        double rangeBoundary = 10;
+        double rangeBoundary = 6;
         filteredPlot.setRangeBoundaries(-1 * rangeBoundary, rangeBoundary, BoundaryMode.FIXED);
         rawPlot.setDomainBoundaries(0, plotSize, BoundaryMode.FIXED);
 
-        // Median Green
-        seriesMedianG = new SimpleXYSeries(
-                Collections.nCopies(plotSize, 0), // convert array to a list
-                SimpleXYSeries.ArrayFormat.Y_VALS_ONLY, // use array indices as x values and array values as y values
-                "Median G" // title
-        );
-        LineAndPointFormatter seriesFormatterMedianG = new LineAndPointFormatter(Color.GREEN, null, null, null);
-        filteredPlot.addSeries(seriesMedianG, seriesFormatterMedianG);
-
-        // Mean Green
-        seriesDeMeanedG = new SimpleXYSeries(
-                Collections.nCopies(plotSize, 0), // convert array to a list
-                SimpleXYSeries.ArrayFormat.Y_VALS_ONLY, // use array indices as x values and array values as y values
-                "DeMeaned G" // title
-        );
-        LineAndPointFormatter seriesFormatterMeanG = new LineAndPointFormatter(Color.LTGRAY, null, null, null);
-        filteredPlot.addSeries(seriesDeMeanedG, seriesFormatterMeanG);
-
-
-//        // Red
-//        seriesDeMeanedR = new SimpleXYSeries(
+//        // Median Green
+//        seriesMedianG = new SimpleXYSeries(
 //                Collections.nCopies(plotSize, 0), // convert array to a list
 //                SimpleXYSeries.ArrayFormat.Y_VALS_ONLY, // use array indices as x values and array values as y values
-//                "DeMeaned R" // title
+//                "Median G" // title
 //        );
-//        LineAndPointFormatter seriesFormatterR = new LineAndPointFormatter(Color.RED, null, null, null);
-//        filteredPlot.addSeries(seriesDeMeanedR, seriesFormatterR);
+//        LineAndPointFormatter seriesFormatterMedianG = new LineAndPointFormatter(Color.GREEN, null, null, null);
+//        filteredPlot.addSeries(seriesMedianG, seriesFormatterMedianG);
+
+//        // Mean Green
+//        seriesDeMeanedG = new SimpleXYSeries(
+//                Collections.nCopies(plotSize, 0), // convert array to a list
+//                SimpleXYSeries.ArrayFormat.Y_VALS_ONLY, // use array indices as x values and array values as y values
+//                "DeMeaned G" // title
+//        );
+//        LineAndPointFormatter seriesFormatterMeanG = new LineAndPointFormatter(Color.LTGRAY, null, null, null);
+//        filteredPlot.addSeries(seriesDeMeanedG, seriesFormatterMeanG);
+
+        // Median Red
+        seriesMedianR = new SimpleXYSeries(
+                Collections.nCopies(plotSize, 0), // convert array to a list
+                SimpleXYSeries.ArrayFormat.Y_VALS_ONLY, // use array indices as x values and array values as y values
+                "Median R" // title
+        );
+        LineAndPointFormatter seriesFormatterMedianR = new LineAndPointFormatter(Color.RED, null, null, null);
+        filteredPlot.addSeries(seriesMedianR, seriesFormatterMedianR);
+
+        // Mean Red
+        seriesDeMeanedR = new SimpleXYSeries(
+                Collections.nCopies(plotSize, 0), // convert array to a list
+                SimpleXYSeries.ArrayFormat.Y_VALS_ONLY, // use array indices as x values and array values as y values
+                "DeMeaned R" // title
+        );
+        LineAndPointFormatter seriesFormatterR = new LineAndPointFormatter(Color.LTGRAY, null, null, null);
+        filteredPlot.addSeries(seriesDeMeanedR, seriesFormatterR);
 //
-//        // Blue
+//        // Mean Blue
 //        seriesDeMeanedB = new SimpleXYSeries(
 //                Collections.nCopies(plotSize, 0), // convert array to a list
 //                SimpleXYSeries.ArrayFormat.Y_VALS_ONLY, // use array indices as x values and array values as y values
@@ -155,6 +166,15 @@ public class PlotManager {
 //        );
 //        LineAndPointFormatter seriesFormatterAll = new LineAndPointFormatter(Color.LTGRAY, null, null, null);
 //        filteredPlot.addSeries(seriesDeMeanedRGB, seriesFormatterAll);
+
+        List<Double> thresholdUpperNumbers = Collections.nCopies(this.plotSize,HeartRateMonitor.PEAK_DETECTION_THRESHOLD);
+        seriesPeakDetectionThreshold = new SimpleXYSeries(
+                thresholdUpperNumbers,
+                SimpleXYSeries.ArrayFormat.Y_VALS_ONLY, // use array indices as x values and array values as y values
+                "Threshold " + HeartRateMonitor.PEAK_DETECTION_THRESHOLD // series title
+        );
+        LineAndPointFormatter thresholdFormatter = new LineAndPointFormatter(Color.WHITE, null, null, null);
+        filteredPlot.addSeries(seriesPeakDetectionThreshold, thresholdFormatter);
     }
 
 
