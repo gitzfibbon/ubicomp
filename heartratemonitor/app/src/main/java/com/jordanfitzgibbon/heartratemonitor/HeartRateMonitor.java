@@ -6,7 +6,6 @@ import org.opencv.android.CameraBridgeViewBase;
 import org.opencv.core.Core;
 import org.opencv.core.Mat;
 import org.opencv.core.Scalar;
-
 import com.badlogic.gdx.audio.analysis.FFT;
 
 import java.lang.reflect.Array;
@@ -18,22 +17,27 @@ public class HeartRateMonitor {
 
     private final String TAG = "HeartRateMonitor";
 
+    // Index into Scalar objects to get RGB values
     private final int RED = 0;
     private final int GREEN = 1;
     private final int BLUE = 2;
 
+    // How many samples to keep in memory
+    // FPS is 10-15
+    private final int RECENT_VALUES_SIZE = 500;
 
-    private final int RECENT_VALUES_SIZE = 300; // FPS is ~15 so this is ~10 seconds
+    // Data structures to store samples
     private ArrayList<CameraBridgeViewBase.CvCameraViewFrame> frames;
     private ArrayList<Mat> mats;
     private ArrayList<Scalar> deMeanedMeans;
     private ArrayList<Scalar> medianFiltered;
 
+    // Size of the FFT. Effective size is half of this.
     public static final int FFT_SIZE = 128;
-    private float spec[]  = new float[FFT_SIZE];
 
     // A sample must change slope and cross this threshold to be considered a heartbeat
-    public static final double PEAK_DETECTION_THRESHOLD = -0.8;
+    // This is actually a 'valley'
+    public static final double PEAK_DETECTION_THRESHOLD = -0.7;
 
     public HeartRateMonitor(CameraBridgeViewBase.CvCameraViewFrame firstFrame) {
 
@@ -44,7 +48,7 @@ public class HeartRateMonitor {
         this.medianFiltered = new ArrayList<Scalar>(Collections.nCopies(RECENT_VALUES_SIZE, this.GetLastMedianFilteredHelper()));
     }
 
-    // Updates this object with the newest frame
+    // Store several different copies of the current frame
     public void AddNewFrame(CameraBridgeViewBase.CvCameraViewFrame frame) {
 
         this.frames.remove(0);
@@ -65,15 +69,13 @@ public class HeartRateMonitor {
         return this.mats.get(RECENT_VALUES_SIZE - 1);
     }
 
-    // Gets the mean of the last frame
+    // Gets the mean of the RGB values of the last frame
     public Scalar GetLastMean() {
         Mat mat = mats.get(RECENT_VALUES_SIZE - 1);
-        //Imgproc.cvtColor(mat, mat, Imgproc.COLOR_RGBA2BGRA );
-
         return Core.mean(mat);
     }
 
-    // Gets the mos recently stored de-meaned mean Scalar
+    // Gets the most recently stored de-meaned mean of the RGB values
     public Scalar GetLastMeanDeMeaned() {
         return this.deMeanedMeans.get(RECENT_VALUES_SIZE -1);
     }
@@ -81,13 +83,14 @@ public class HeartRateMonitor {
     // Calculates a de-meaned value of the Scalar of the most recent means
     private Scalar GetLastMeanDeMeanedHelper() {
 
-        int meanWindowSize = 30;
+        // How many previous samples we will use to de-mean
+        int meanWindowSize = 15;
 
         double sumR = 0;
         double sumG = 0;
         double sumB = 0;
 
-        Scalar mean = this.GetLastMean(); // Initialize to the last mean
+        Scalar mean = this.GetLastMean(); // Initialize to the last mean but this will get overwritten
         for (int i = RECENT_VALUES_SIZE - meanWindowSize; i < RECENT_VALUES_SIZE; i++) {
             mean = Core.mean(mats.get(i));
             sumR += mean.val[RED];
@@ -99,12 +102,14 @@ public class HeartRateMonitor {
         double meanG = sumG / meanWindowSize;
         double meanB = sumB / meanWindowSize;
 
+        // Subtract the mean of the previous values from the mean Scalar
         Scalar latestMean = this.GetLastMean();
         mean.set(new double[] {latestMean.val[RED] - meanR, latestMean.val[GREEN] - meanG, latestMean.val[BLUE] - meanB});
 
         return mean;
     }
 
+    // Get the most recently stored median filtered mean Scalar
     public Scalar GetLastMedianFiltered() {
         return this.medianFiltered.get(RECENT_VALUES_SIZE -1);
     }
@@ -150,9 +155,9 @@ public class HeartRateMonitor {
     }
 
     // Use only one color channel
-    public float[] FFT(int sampleRate) {
+    public float[] FFT(int windowInSeconds, int sampleRate) {
 
-        int sampleSize = 100;
+        int sampleSize = windowInSeconds * sampleRate;
 
         // Start by using de-meaned, median filtered values
 
@@ -173,17 +178,18 @@ public class HeartRateMonitor {
         fft.forward(fftInput);
 
         // float[] fft_cpx = fft.getSpectrum();
-        float[] imag = fft.getImaginaryPart();
+        float[] imaginary = fft.getImaginaryPart();
         float[] real = fft.getRealPart();
-        float[] mag = new float[FFT_SIZE];
+        float[] magnitude = new float[FFT_SIZE];
 
         for (int i = 0; i < FFT_SIZE; i++) {
-            mag[i] = (float)Math.sqrt((real[i] * real[i]) + (imag[i] * imag[i]));
+            magnitude[i] = (float)Math.sqrt((real[i] * real[i]) + (imaginary[i] * imaginary[i]));
         }
 
-        return mag;
+        return magnitude;
     }
 
+    // A default overload that is applied to the latest value
     public boolean DetectPeak() {
         return this.DetectPeak(this.RECENT_VALUES_SIZE - 3, this.RECENT_VALUES_SIZE - 2, this.RECENT_VALUES_SIZE -1);
     }
@@ -191,6 +197,15 @@ public class HeartRateMonitor {
     // Use the de-meaned values for peak detection
     public boolean DetectPeak(int previousX, int x, int nextX)
     {
+
+        // Ignore frames that do not have a high mean RED value of 150
+        int minRedValue = 175;
+        boolean highRedValue = Core.mean(this.mats.get(x)).val[RED] >= minRedValue;
+        if (!highRedValue)
+        {
+            return false;
+        }
+
         double previousSlope = this.deMeanedMeans.get(x).val[RED] - this.deMeanedMeans.get(previousX).val[RED];
         double nextSlope = this.deMeanedMeans.get(nextX).val[RED] - this.deMeanedMeans.get(x).val[RED];
 
@@ -222,7 +237,7 @@ public class HeartRateMonitor {
     }
 
     public int GetHeartRate(double FPS) {
-        int heartRate = this.GetPeaks(12, FPS) * 5;
+        int heartRate = this.GetPeaks(10, FPS) * 6;
 
         if (heartRate < 45 || heartRate > 220)
         {

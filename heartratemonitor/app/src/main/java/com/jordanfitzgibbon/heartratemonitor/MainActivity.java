@@ -1,6 +1,8 @@
 package com.jordanfitzgibbon.heartratemonitor;
 
 
+import android.content.pm.PackageManager;
+import android.hardware.Camera;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -16,6 +18,7 @@ import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
 import org.opencv.core.Mat;
 import org.opencv.core.Scalar;
+import org.opencv.highgui.Highgui;
 
 public class MainActivity extends ActionBarActivity implements CameraBridgeViewBase.CvCameraViewListener2 {
 
@@ -59,7 +62,6 @@ public class MainActivity extends ActionBarActivity implements CameraBridgeViewB
     private int heartRate = 0;
 
     // Textviews that we will update
-    private TextView textViewFps;
     private TextView textViewSettings;
     private TextView textViewHeartRate;
 
@@ -81,7 +83,12 @@ public class MainActivity extends ActionBarActivity implements CameraBridgeViewB
         mOpenCvCameraView.setVisibility(SurfaceView.VISIBLE);
         mOpenCvCameraView.setCvCameraViewListener(this);
 
-        //textViewFps = (TextView)findViewById(R.id.textViewFps);
+//        PackageManager packageManager = this.getPackageManager();
+//        if (packageManager.hasSystemFeature(PackageManager.FEATURE_CAMERA)) {
+//            // If this is a Nexus 7 it will return false to the above condition. So, use the back camera.
+//            mOpenCvCameraView.setCameraIndex(0);
+//        }
+
         textViewSettings = (TextView)findViewById(R.id.textViewSettings);
         textViewHeartRate = (TextView)findViewById(R.id.textViewHeartRate);
     }
@@ -146,49 +153,62 @@ public class MainActivity extends ActionBarActivity implements CameraBridgeViewB
     @Override
     public Mat onCameraFrame(CameraBridgeViewBase.CvCameraViewFrame inputFrame) {
 
+        // Increment the sample count. We use it to calculate current FPS.
+        this.sampleCount++;
+
+        // Initialize HeartRateMonitor class
         if (this.heartRateMonitor == null) {
             this.heartRateMonitor = new HeartRateMonitor(inputFrame);
         }
 
+        // Store the frame
         this.heartRateMonitor.AddNewFrame(inputFrame);
 
+        // Plot the mean RGB values of the frame
         Scalar mean = this.heartRateMonitor.GetLastMean();
         plotManager.UpdateRawPlot(mean.val[0], mean.val[1], mean.val[2]);
 
+        // Plot the de-meaned mean RGB values, median filtered mean RGB values and peaks
+        boolean isPeak = heartRateMonitor.DetectPeak();
         Scalar deMeanedMean = this.heartRateMonitor.GetLastMeanDeMeaned();
         Scalar medianFiltered = this.heartRateMonitor.GetLastMedianFiltered();
-        boolean isPeak = heartRateMonitor.DetectPeak();
         plotManager.UpdateFilteredPlot(
                 deMeanedMean.val[0], deMeanedMean.val[1], deMeanedMean.val[2],
                 medianFiltered.val[0], medianFiltered.val[1], medianFiltered.val[2],
                 isPeak);
 
-        this.sampleCount++; // increment the sample count
-
+        // Check if the current interval is over
         long nanoTime = System.nanoTime();
         if (this.ConvertNanoToMs(nanoTime - lastUpdateTime) >= this.refreshIntervalMs) {
-            float[] fftMags = this.heartRateMonitor.FFT((int)Math.round(this.FPS));
-            this.plotManager.UpdateFFTPlot(fftMags);
 
-            // update the previous FPS
-            this.FPS = this.sampleCount / (double)(this.refreshIntervalMs / 1000);
+            // Reset the last updated time
+            this.lastUpdateTime = nanoTime;
+
+            // Update the FPS variable with the average of the actual FPS of the current interval and the FPS of the previous interval
+            double previousFPS = this.FPS;
+            this.FPS = (this.sampleCount / (double)(this.refreshIntervalMs / 1000) + previousFPS) / 2;
             this.sampleCount = 0;
-
             Log.d(TAG, "FPS: " + this.FPS);
+
+            // Update the FFT plot
+            int fftWindowInSeconds = 10;
+            float[] fftMags = this.heartRateMonitor.FFT(fftWindowInSeconds, (int)Math.round(this.FPS));
+            this.plotManager.UpdateFFTPlot(fftMags);
 
             // Get heart rate
             this.heartRate = heartRateMonitor.GetHeartRate(this.FPS);
             Log.d(TAG, "Heart Rate: " + heartRate);
 
+            // Update the UI with the heart rate
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
                     textViewHeartRate.setText("Heart Rate: " + heartRate);
                 }
             });
-
-            this.lastUpdateTime = nanoTime;
         }
+
+        // Return the frame to be displayed on the device
         return this.heartRateMonitor.GetLastMat();
     }
 

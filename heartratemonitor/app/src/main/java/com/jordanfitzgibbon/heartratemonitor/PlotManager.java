@@ -121,7 +121,7 @@ public class PlotManager {
     // Note: only plot green values
     public void ConfigureFilteredPlot() {
 
-        double rangeBoundary = 6;
+        double rangeBoundary = 4;
         filteredPlot.setRangeBoundaries(-1 * rangeBoundary, rangeBoundary, BoundaryMode.FIXED);
         rawPlot.setDomainBoundaries(0, plotSize, BoundaryMode.FIXED);
 

@@ -1,9 +1,9 @@
 This file contains decisions and assumptions for A2.
 
 INSTRUCTIONS
-1. Place your index finger over the device's camera
+1. Place your index finger lightly over the device's camera
 2. Use a bright light source and aim it closely at the finger that is covering the camera
-3. Hold your finger and the light in the position for 5+ seconds
+3. Hold your finger and the light in the position for 10+ seconds
 
 CONFIGURATION SETTINGS
 
