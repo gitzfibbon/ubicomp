@@ -1,13 +1,28 @@
-This file contains decisions and assumptions for A2.
+This file contains decisions and assumptions.
 
 INSTRUCTIONS
 1. Place your index finger lightly over the device's camera
 2. Use a bright light source and aim it closely at the finger that is covering the camera
 3. Hold your finger and the light in the position for 10+ seconds
 
-CONFIGURATION SETTINGS
 
-RGB CHOICE
+ALGORITHM FOR COMPUTING HEART RATE
+I used a combination of techniques. Here is the general approach:
+
+- Store a history of frames. Roughly enough for 30 seconds of data.
+- Get the mean R, G and B of each frame. Call this meanR, meanG, meanB.
+- De-mean the the above (meanR, meanG, meanB).
+- Discard meanG and meanB. Only use meanR as it appeared to be the strongest signal for heart rate.
+- Apply peak detection on the de-meaned meanR.
+- Peak Detection had three requirements to be a peak (actually a valley):
+    1. slope changes from negative to positive
+    2. the point of the peak is below a threshold value of -0.7
+    3. the meanR of the frame (not the de-meaned meanR) is above a red value of 175 (which means a finger is likely being held over the camera)
+- Take a 10 second sample, count the peaks and multiply by 6 to get the heart rate per minute
+- Refresh every 2 seconds
+
+
+CHOICE TO USE ONLY RED
 After observing the change in R, G and B values when a finger is placed over the camera it appeared that red had the most pronounced fluctuations.
 Thus, after much experimentation I chose to use only those values of the images to measure heart rate. This can be easily configured/changed in the code to use any combination of RGB.
 
@@ -16,12 +31,28 @@ I did median filtering and plotted it on the UI. However, it did not seem very u
 I did not use any median filtered values in my calculations for heart rate.
 
 DE-MEANING
-I used the previous 30 recorded frames for de-meaning. This results in ~2 seconds of data at 15 fps.
+I used the previous 15 recorded frames (~1 to 1.5 seconds) for de-meaning. This was mainly useful for plotting.
 
 PEAK DETECTION
-I implement simple peak detection. A peak occurs when the slope of the line changes from negative to positive (a 'valley') and the valley is under
-the threshold value of -1.0
-I used the unfiltered red channel mean of the frame and de-meaned it, then applied peak detection.
+Peak detection was applied on the de-meaned meanR. Specific criteria are mentioned in the ALGORITHM section.
 
 INTERFACE
+Aside from the obvious (camera image, instructions, heart rate) there are three plots.
+
+Upper Plot:
+    Shows the FFT. The size of the FFT is 128 and discarding the mirror image results in 64.
+    The average FPS is 10-15 FPS. Thus, the FFT plot range is from roughly 0-7 Hz.
+    I did not end up using FFT in any calculations.
+
+Middle Plot:
+    This is the most significant plot.
+    White dots are measured as peaks (actually, valleys) and count as a heartbeat.
+    The grey line is the de-meaned mean RED value of each frame.
+    The red line is median filtered (size 2) de-meaned mean RED value of each frame (same as grey but median filtered).
+
+Lower Plot:
+    This shows the means of each frame.
+    Each colored line is the mean for that frame. Eg. the green line is the mean green value of each frame.
+    The grey line is the average of the mean of the three colors (RGB).
+
 
