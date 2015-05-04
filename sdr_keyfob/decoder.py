@@ -39,8 +39,8 @@ def processSamples(data,  startIndex):
 
     # Set some thresholds
     magnitudeThreshold = 0.1
-    shortSignalWidth = [300, 600]
-    longSignalWidth = [1100, 1600]
+    shortSignalWidth = [200, 600]
+    longSignalWidth = [1000, 1600]
     gapSignalWidth = 16000
 
     signals = list()
@@ -127,12 +127,11 @@ def processSamples(data,  startIndex):
             if  i >= signalsLength or signals[i] == GAP:
                 # We can quit the loop
                 matchFound = False
+
             i += 1
             
         # Increment i for the loop
         i += 1
-
-
 
 
 # END processSamples
@@ -152,7 +151,6 @@ sampleRate = 1e6
 
 # Keeps track of where we are in the data array
 index = 0
-
 while True:
     
     # Load in data
@@ -160,11 +158,10 @@ while True:
     dataLength = len(data)
 
 	# If we have more than a quarter of a second of new data then process it
-    if (dataLength - index) > sampleRate/4:
-        processSamples(data,  index)
+    if (dataLength - index) > sampleRate/2:
+        processSamples(data,  index,)
         index = dataLength - 1
     else:
-#        print "sleep 0.1"
         time.sleep(0.1)
 
 
