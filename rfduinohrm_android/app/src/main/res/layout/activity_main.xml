@@ -20,8 +20,7 @@
         android:id="@+id/editTextConnect"
         android:text="JordanFitzgibbon"
         android:layout_alignTop="@+id/buttonConnect"
-        android:layout_toEndOf="@+id/textViewConnect"
-        android:layout_alignEnd="@id/buttonConnect" />
+        android:layout_toEndOf="@+id/textViewConnect" />
 
     <TextView
         android:layout_width="wrap_content"
@@ -50,5 +49,14 @@
         android:id="@+id/textViewData"
         android:layout_alignStart="@+id/textViewConnect"
         android:layout_below="@+id/textViewConnect" />
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Scan"
+        android:id="@+id/buttonScan"
+        android:textSize="12dp"
+        android:layout_alignParentTop="true"
+        android:layout_toStartOf="@+id/buttonConnect" />
 
 </RelativeLayout>

@@ -2,8 +2,11 @@ package com.jordanfitzgibbon.rfduinohrm;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.content.BroadcastReceiver;
 import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.os.IBinder;
 import android.support.v7.app.ActionBarActivity;
@@ -77,23 +80,47 @@ public class MainActivity extends ActionBarActivity implements BluetoothAdapter.
         // Connect Device
         // connectionStatusText = (TextView) findViewById(R.id.connectionStatus);
 
-        connectButton = (Button) findViewById(R.id.buttonConnect);
-        connectButton.setOnClickListener(new View.OnClickListener() {
+        scanButton = (Button) findViewById(R.id.buttonScan);
+        scanButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-
-                // rebind to service if it currently isn't
-                //if(!serviceBound) {
-                    rfduinoServiceConnection = genServiceConnection();
-                //}
-
-                Intent rfduinoIntent = new Intent(getApplicationContext(), RFduinoService.class);
-                getApplicationContext().bindService(rfduinoIntent, rfduinoServiceConnection, BIND_AUTO_CREATE);
 
                 scanStarted = true;
                 bluetoothAdapter.startLeScan(
                         new UUID[]{ RFduinoService.UUID_SERVICE },
                         MainActivity.this);
+
+            }
+        });
+
+        // rebind to service if it currently isn't
+        //if(!serviceBound) {
+        rfduinoServiceConnection = genServiceConnection();
+        //}
+
+        connectButton = (Button) findViewById(R.id.buttonConnect);
+        connectButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                v.setEnabled(false);
+                //connectionStatusText.setText("Connecting...");
+                // if device was rotated we need to set up a new service connection with this activity
+                if (connectionIsOld) {
+                    Log.w("Main", "Rebuilding connection after rotation");
+                    connectionIsOld = false;
+                    rfduinoServiceConnection = genServiceConnection();
+                }
+                if (serviceBound) {
+                    if (rfduinoService.initialize()) {
+                        if (rfduinoService.connect(bluetoothDevice.getAddress())) {
+                            //upgradeState(STATE_CONNECTING);
+                        }
+                    }
+                } else {
+                    Intent rfduinoIntent = new Intent(getApplicationContext(), RFduinoService.class);
+                    getApplicationContext().bindService(rfduinoIntent, rfduinoServiceConnection, BIND_AUTO_CREATE);
+                }
+
             }
         });
 
@@ -110,7 +137,19 @@ public class MainActivity extends ActionBarActivity implements BluetoothAdapter.
 
     }
 
+    @Override
+    protected void onStart() {
+        super.onStart();
+        Log.w("Main","onStart called");
+        registerReceiver(scanModeReceiver, new IntentFilter(BluetoothAdapter.ACTION_SCAN_MODE_CHANGED));
+        registerReceiver(bluetoothStateReceiver, new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED));
+        registerReceiver(rfduinoReceiver, RFduinoService.getIntentFilter());
 
+        if(state <= STATE_DISCONNECTED) {
+            //updateState(bluetoothAdapter.isEnabled() ? STATE_DISCONNECTED : STATE_BLUETOOTH_OFF);
+        }
+
+    }
 
 
     @Override
@@ -226,4 +265,57 @@ public class MainActivity extends ActionBarActivity implements BluetoothAdapter.
     }
 
 
+    private final BroadcastReceiver rfduinoReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            final String action = intent.getAction();
+            Log.w("Main","rfduinoReceiver called with " + action);
+            if (RFduinoService.ACTION_CONNECTED.equals(action)) {
+                //upgradeState(STATE_CONNECTED);
+            } else if (RFduinoService.ACTION_DISCONNECTED.equals(action)) {
+                //downgradeState(STATE_DISCONNECTED);
+            } else if (RFduinoService.ACTION_DATA_AVAILABLE.equals(action)) {
+                //addData(intent.getByteArrayExtra(RFduinoService.EXTRA_DATA));
+            }
+        }
+    };
+
+    private final BroadcastReceiver bluetoothStateReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            int state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, 0);
+            if (state == BluetoothAdapter.STATE_ON) {
+                //upgradeState(STATE_DISCONNECTED);
+            } else if (state == BluetoothAdapter.STATE_OFF) {
+                //downgradeState(STATE_BLUETOOTH_OFF);
+            }
+        }
+    };
+
+    private final BroadcastReceiver scanModeReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            scanning = (bluetoothAdapter.getScanMode() != BluetoothAdapter.SCAN_MODE_NONE);
+            scanStarted &= scanning;
+            //updateUi();
+        }
+    };
+
+    private void addData(byte[] data) {
+        dataTextView.append(bytesToFloat(data));
+//        View view = getLayoutInflater().inflate(android.R.layout.simple_list_item_2, dataLayout, false);
+//
+//        TextView text1 = (TextView) view.findViewById(android.R.id.text1);
+//        text1.setText(HexAsciiHelper.bytesToHex(data));
+//        text1.setText(this.bytesToFloat(data));
+//
+//        String ascii = HexAsciiHelper.bytesToAsciiMaybe(data);
+//        if (ascii != null) {
+//            TextView text2 = (TextView) view.findViewById(android.R.id.text2);
+//            text2.setText(ascii);
+//        }
+//
+//        dataLayout.addView(
+//                view, LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+    }
 }
