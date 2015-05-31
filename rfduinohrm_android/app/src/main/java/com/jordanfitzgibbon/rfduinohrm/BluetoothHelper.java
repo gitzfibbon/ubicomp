@@ -23,6 +23,25 @@ public class BluetoothHelper {
                 .toString();
     }
 
+    public static String getAdvertisementData(BluetoothDevice device, byte[] scanRecord) {
+        StringBuilder output = new StringBuilder();
+        int i = 0;
+        while (i < scanRecord.length) {
+            int len = scanRecord[i++] & 0xFF;
+            if (len == 0) break;
+            switch (scanRecord[i] & 0xFF) {
+               case 0xFF: // Manufacturer Specific data (RFduinoBLE.advertisementData)
+                    String ascii = HexAsciiHelper.bytesToAsciiMaybe(scanRecord, i + 3, len);
+                    if (ascii != null) {
+                        output.append(ascii);
+                    }
+                    break;
+            }
+            i += len;
+        }
+        return output.toString();
+    }
+
     // Bluetooth Spec V4.0 - Vol 3, Part C, section 8
     private static String parseScanRecord(byte[] scanRecord) {
         StringBuilder output = new StringBuilder();

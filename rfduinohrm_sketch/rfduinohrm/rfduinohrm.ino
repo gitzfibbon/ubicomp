@@ -7,7 +7,8 @@ int value = 0;
 void setup() {
 
   // Configure and start BLE
-  RFduinoBLE.advertisementData = "JordanFitzgibbon";
+  RFduinoBLE.deviceName = "jordanfitzgibbon";
+  RFduinoBLE.advertisementData = "jordanfitzgibbon";
   RFduinoBLE.begin();
 
   pinMode(pulseSensor, INPUT);
@@ -22,7 +23,7 @@ int values[1];
 
 void loop() {
   
-  RFduino_ULPDelay( SECONDS(1) );
+  RFduino_ULPDelay( MILLISECONDS(50) );
   
   values[i] = analogRead(pulseSensor);
   i++;

@@ -105,6 +105,7 @@ public class MainActivity extends Activity implements BluetoothAdapter.LeScanCal
             getApplicationContext().bindService(rfduinoIntent, rfduinoServiceConnection, BIND_AUTO_CREATE);
         }
 
+        connectEditText = (EditText) findViewById(R.id.editTextConnect);
 
         scanButton = (Button) findViewById(R.id.buttonScan);
         scanButton.setOnClickListener(new View.OnClickListener() {
@@ -211,21 +212,21 @@ public class MainActivity extends Activity implements BluetoothAdapter.LeScanCal
         bluetoothAdapter.stopLeScan(this);
         scanning = false;
 
+        String deviceName = device.getName();
         final String infoText = BluetoothHelper.getDeviceInfoText(device, rssi, scanRecord);
-        if (infoText.contains(connectEditText.getText().toString().substring(0,7))) {
+        String targetDevice = connectEditText.getText().toString().substring(0,Math.min(14, connectEditText.getText().toString().length()));
+        if (deviceName.equals(targetDevice)) {
             bluetoothDevice = device;
         }
         else
         {
-            Log.d(TAG, "Not the device we're looking for");
-            Log.d(TAG, infoText);
+            Log.d(TAG, "Looking for " + targetDevice + " but found " + deviceName);
         }
 
         MainActivity.this.runOnUiThread(new Runnable() {
             @Override
             public void run() {
                 dataTextView.setText(infoText);
-
             }
         });
     }
