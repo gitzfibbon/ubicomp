@@ -3,8 +3,6 @@ package com.jordanfitzgibbon.rfduinohrm;
 import android.bluetooth.BluetoothDevice;
 import android.content.ServiceConnection;
 
-import com.lannbox.rfduinotest.RFduinoService;
-
 public class BTLEBundle
 {
     public ServiceConnection connection;

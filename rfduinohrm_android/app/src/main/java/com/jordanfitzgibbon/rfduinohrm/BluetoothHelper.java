@@ -1,6 +1,8 @@
-package com.lannbox.rfduinotest;
+package com.jordanfitzgibbon.rfduinohrm;
 
 import android.bluetooth.BluetoothDevice;
+
+//import com.lannbox.rfduinotest.HexAsciiHelper;
 
 import java.util.UUID;
 
@@ -34,10 +36,10 @@ public class BluetoothHelper {
                     output.append("\n  Tx Power: ").append(scanRecord[i+1]);
                     break;
                 case 0xFF: // Manufacturer Specific data (RFduinoBLE.advertisementData)
-                    output.append("\n  Advertisement Data: ")
-                            .append(HexAsciiHelper.bytesToHex(scanRecord, i + 3, len));
+                    output.append("\n  Advertisement Data: ");
+                            //.append(HexAsciiHelper.bytesToHex(scanRecord, i + 3, len));
 
-                    String ascii = HexAsciiHelper.bytesToAsciiMaybe(scanRecord, i + 3, len);
+                    String ascii = "TODO"; // HexAsciiHelper.bytesToAsciiMaybe(scanRecord, i + 3, len);
                     if (ascii != null) {
                         output.append(" (\"").append(ascii).append("\")");
                     }
