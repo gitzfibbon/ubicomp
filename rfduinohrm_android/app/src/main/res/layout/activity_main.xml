@@ -11,8 +11,8 @@
         android:text="Connect"
         android:id="@+id/buttonConnect"
         android:textSize="12dp"
-        android:layout_alignParentTop="true"
-        android:layout_toEndOf="@+id/editTextConnect" />
+        android:layout_alignTop="@+id/buttonDisconnect"
+        android:layout_toStartOf="@+id/buttonDisconnect" />
 
     <EditText
         android:layout_width="wrap_content"
@@ -20,7 +20,8 @@
         android:id="@+id/editTextConnect"
         android:text="JordanFitzgibbon"
         android:layout_alignTop="@+id/buttonConnect"
-        android:layout_toEndOf="@+id/textViewConnect" />
+        android:layout_toEndOf="@+id/textViewConnect"
+        android:layout_alignEnd="@id/buttonConnect" />
 
     <TextView
         android:layout_width="wrap_content"
@@ -29,7 +30,7 @@
         android:text="Connect to:"
         android:id="@+id/textViewConnect"
         android:gravity="center_vertical"
-        android:textSize="15dp"
+        android:textSize="18dp"
         android:layout_alignBottom="@+id/editTextConnect"
         android:layout_alignParentTop="true" />
 
@@ -40,6 +41,14 @@
         android:id="@+id/buttonDisconnect"
         android:textSize="12dp"
         android:layout_alignParentTop="true"
-        android:layout_toEndOf="@+id/buttonConnect" />
+        android:layout_alignParentEnd="true" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="New Text"
+        android:id="@+id/textViewData"
+        android:layout_alignStart="@+id/textViewConnect"
+        android:layout_below="@+id/textViewConnect" />
 
 </RelativeLayout>

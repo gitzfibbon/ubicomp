@@ -1,3 +1,6 @@
+
+// This code is taken from https://github.com/Uni-Freiburg-Wearable-Devices-WS14/RFDuinoTest
+
 /*
  * Copyright (C) 2013 Lann Martin
  *
@@ -44,10 +47,7 @@ import android.os.Binder;
 import android.os.IBinder;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
-
 import java.util.UUID;
-
-import com.jordanfitzgibbon.rfduinohrm.RFduinoService;
 
 public class RFduinoService extends Service {
     private final static String TAG = RFduinoService.class.getSimpleName();

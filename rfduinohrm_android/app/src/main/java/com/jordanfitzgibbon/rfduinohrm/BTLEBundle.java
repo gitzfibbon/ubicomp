@@ -1,3 +1,6 @@
+
+// This code is taken from https://github.com/Uni-Freiburg-Wearable-Devices-WS14/RFDuinoTest
+
 package com.jordanfitzgibbon.rfduinohrm;
 
 import android.bluetooth.BluetoothDevice;

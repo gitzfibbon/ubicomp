@@ -16,8 +16,11 @@ import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import org.w3c.dom.Text;
+
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.UUID;
 
 
 public class MainActivity extends ActionBarActivity implements BluetoothAdapter.LeScanCallback {
@@ -41,6 +44,7 @@ public class MainActivity extends ActionBarActivity implements BluetoothAdapter.
     private RFduinoService rfduinoService;
     private ServiceConnection rfduinoServiceConnection;
 
+    private TextView dataTextView;
     private Button enableBluetoothButton;
     private TextView scanStatusText;
     private Button scanButton;
@@ -77,13 +81,24 @@ public class MainActivity extends ActionBarActivity implements BluetoothAdapter.
         connectButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+
+                // rebind to service if it currently isn't
+                //if(!serviceBound) {
+                    rfduinoServiceConnection = genServiceConnection();
+                //}
+
                 Intent rfduinoIntent = new Intent(getApplicationContext(), RFduinoService.class);
                 getApplicationContext().bindService(rfduinoIntent, rfduinoServiceConnection, BIND_AUTO_CREATE);
+
+                scanStarted = true;
+                bluetoothAdapter.startLeScan(
+                        new UUID[]{ RFduinoService.UUID_SERVICE },
+                        MainActivity.this);
             }
         });
 
         // Disconnect Device
-        //disconnectButton = (Button) findViewById(R.id.disconnect);
+        disconnectButton = (Button) findViewById(R.id.buttonDisconnect);
         disconnectButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -91,7 +106,7 @@ public class MainActivity extends ActionBarActivity implements BluetoothAdapter.
             }
         });
 
-        //dataLayout = (LinearLayout) findViewById(R.id.dataLayout);
+        dataTextView = (TextView) findViewById(R.id.textViewData);
 
     }
 
@@ -139,7 +154,7 @@ public class MainActivity extends ActionBarActivity implements BluetoothAdapter.
         MainActivity.this.runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                deviceInfoText.setText(
+                dataTextView.setText(
                         BluetoothHelper.getDeviceInfoText(bluetoothDevice, rssi, scanRecord));
                 //updateUi();
             }
