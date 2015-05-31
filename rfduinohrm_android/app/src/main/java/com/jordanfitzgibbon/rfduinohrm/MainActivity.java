@@ -16,10 +16,6 @@ import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
-//import com.lannbox.rfduinotest.BTLEBundle;
-//import com.lannbox.rfduinotest.EditData;
-//import com.lannbox.rfduinotest.RetainedFragment;
-
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
@@ -77,7 +73,7 @@ public class MainActivity extends ActionBarActivity implements BluetoothAdapter.
         // Connect Device
         // connectionStatusText = (TextView) findViewById(R.id.connectionStatus);
 
-        //connectButton = (Button) findViewById(R.id.connect);
+        connectButton = (Button) findViewById(R.id.buttonConnect);
         connectButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
