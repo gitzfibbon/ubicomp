@@ -217,7 +217,7 @@ public class HeartRateMonitor {
 
     }
 
-    private int GetPeaks(int windowInSeconds, int sampleRateHz) {
+    private int CountPeaks(int windowInSeconds, int sampleRateHz) {
 
         // Figure out how many samples to pull in order to calculate a heartrate from the desired window time
         // Eg. if we sample at 20Hz and want to calculate hr based on the last 10 seconds then we need to pull 20*10 samples
@@ -235,7 +235,6 @@ public class HeartRateMonitor {
         Log.d(TAG, "Total Samples being used: " + totalSamplesUsed);
 
         for (int i = 0; i < totalSamplesUsed-2; i++) {
-            //if ( this.DetectPeak(RECENT_VALUES_SIZE-i-3,RECENT_VALUES_SIZE-i-2,RECENT_VALUES_SIZE-1) ) {
             if ( this.peaks.get(i) == true ) {
                 totalPeaks++;
             }
@@ -246,13 +245,76 @@ public class HeartRateMonitor {
         return totalPeaks;
     }
 
+    // Calculates the avg time in ms between peaks. Uses the windowInSeconds to look back on samples in that window
+    private int GetHrFromAvgPeakInterval(int windowInSeconds, int sampleRateHz) {
+
+        // Figure out how many samples to pull in order to calculate a heartrate from the desired window time
+        // Eg. if we sample at 20Hz and want to calculate hr based on the last 10 seconds then we need to pull 20*10 samples
+        int totalSamplesNeeded = windowInSeconds * sampleRateHz;
+
+        // If we don't have enough samples available, adjust the window
+        if (totalSamplesNeeded > RECENT_VALUES_SIZE)
+        {
+            windowInSeconds = RECENT_VALUES_SIZE / sampleRateHz;
+        }
+
+        int totalSamplesUsed = Math.min(RECENT_VALUES_SIZE, totalSamplesNeeded);
+
+        boolean firstPeakFound = false;
+        ArrayList<Integer> intervals = new ArrayList<>();
+        int currentIntervalSize = 0;
+
+        for (int i = 0; i < totalSamplesUsed-2; i++) {
+
+            // Loop until we find the first peak. We ignore data before it since we don't know when the previous peak occurred.
+            if (firstPeakFound == false) {
+                if (this.peaks.get(i)) {
+                    firstPeakFound = true;
+                }
+                continue;
+            }
+
+            // Increment interval, even if the next will be a peak
+            currentIntervalSize++;
+
+            // If we find another peak, store the interval size between this and the previous
+            if (this.peaks.get(i)) {
+                intervals.add(currentIntervalSize);
+                currentIntervalSize = 0;
+            }
+
+            // If we get to the end of the loop, throw out the rest of the data
+
+        }
+
+        // Calculate the mean sample count in each interval
+        int sum = 0;
+        for (int i=0; i < intervals.size(); i++) {
+            sum += intervals.get(i);
+        }
+
+        float mean = (float) sum / intervals.size();
+
+        // Convert the mean (which is just a count) to ms
+        float sampleRateInMs = 1000f / sampleRateHz;
+
+        // Now get the time span between each interval
+        float intervalLengthInMs = mean * sampleRateInMs;
+
+        // Figure out how many time spans fit in 60 seconds
+        float heartRate = 60 * 1000 / intervalLengthInMs;
+
+        return (int)Math.round(heartRate);
+    }
+
     // Count peaks within this many recent seconds
     public int GetHeartRate(int windowInSeconds, int sampleRateHz) {
 
         // Multiple this by windowInSeconds to get the peaks within 60 seconds
         Float windowMultiplier = 60f / windowInSeconds;
 
-        int heartRate = (int) (this.GetPeaks(windowInSeconds, sampleRateHz) * windowMultiplier);
+        //int heartRate = (int) (this.CountPeaks(windowInSeconds, sampleRateHz) * windowMultiplier);
+        int heartRate = 0;
 
 //        if (heartRate < 45 || heartRate > 220)
 //        {
