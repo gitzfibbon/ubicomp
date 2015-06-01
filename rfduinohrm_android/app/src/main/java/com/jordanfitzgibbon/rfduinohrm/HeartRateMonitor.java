@@ -246,10 +246,11 @@ public class HeartRateMonitor {
         return totalPeaks;
     }
 
-    public int GetHeartRate(int sampleRateHz) {
+    // Count peaks within this many recent seconds
+    public int GetHeartRate(int windowInSeconds, int sampleRateHz) {
 
-        int windowInSeconds = 10; // Count peaks within this many recent seconds
-        Float windowMultiplier = 60f / windowInSeconds; // Multiple this by windowInSeconds to get the peaks within 60 seconds
+        // Multiple this by windowInSeconds to get the peaks within 60 seconds
+        Float windowMultiplier = 60f / windowInSeconds;
 
         int heartRate = (int) (this.GetPeaks(windowInSeconds, sampleRateHz) * windowMultiplier);
 

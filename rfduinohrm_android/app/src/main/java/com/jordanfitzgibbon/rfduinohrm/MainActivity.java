@@ -410,8 +410,16 @@ public class MainActivity extends ActionBarActivity implements BluetoothAdapter.
 //            float[] fftMags = this.heartRateMonitor.FFT(fftWindowInSeconds, (int)Math.round(this.FPS));
 //            this.plotManager.UpdateFFTPlot(fftMags);
 
-            // Get heart rate
-            this.heartRate = heartRateMonitor.GetHeartRate(this.sampleRateHz);
+            // Get heart rate using a window of this many seconds
+            int useWindowInSeconds = 12;
+
+            if (this.heartRate < 35 || this.heartRate > 300)
+            {
+                // Use a shorter window since the calculation hasn't stabilized
+                useWindowInSeconds = 6;
+            }
+
+            this.heartRate = heartRateMonitor.GetHeartRate(useWindowInSeconds, this.sampleRateHz);
             Log.d(TAG, "Heart Rate: " + heartRate);
 
             // Update the UI with the heart rate
