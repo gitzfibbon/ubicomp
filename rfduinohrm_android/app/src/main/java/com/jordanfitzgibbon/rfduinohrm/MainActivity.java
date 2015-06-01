@@ -32,7 +32,7 @@ public class MainActivity extends ActionBarActivity implements BluetoothAdapter.
     private HeartRateMonitor heartRateMonitor;
     private PlotManager plotManager;
 
-    private int sampleRateHz = 20; // The rate at which the rfduino is sampling
+    private int sampleRateHz = 10; // The rate at which the rfduino is sampling
 
     // For keeping track of time
     long lastUpdateTime;

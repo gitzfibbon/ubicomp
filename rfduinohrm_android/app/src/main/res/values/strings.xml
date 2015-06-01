@@ -1,6 +1,5 @@
 <resources>
-    <string name="app_name">rfduinohrm</string>
+    <string name="app_name">RFduino HRM - Jordan Fitzgibbon</string>
 
-    <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
 </resources>
