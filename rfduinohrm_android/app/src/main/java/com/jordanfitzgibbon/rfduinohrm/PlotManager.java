@@ -89,6 +89,16 @@ public class PlotManager {
         LineAndPointFormatter seriesFormatterDemeaned = new LineAndPointFormatter(Color.RED, null, null, null);
         filteredPlot.addSeries(seriesDeMeaned, seriesFormatterDemeaned);
 
+        // Draws peaks
+        List<Double> peakDetectionDotNumbers = Collections.nCopies(this.plotSize,1000.0); // Set to some high value that will be off the chart
+        seriesPeaks = new SimpleXYSeries(
+                peakDetectionDotNumbers,
+                SimpleXYSeries.ArrayFormat.Y_VALS_ONLY, // use array indices as x values and array values as y values
+                "Peaks" // series title
+        );
+        LineAndPointFormatter peakFormatter = new LineAndPointFormatter(null, Color.WHITE, null, null);
+        peakFormatter.getVertexPaint().setStrokeWidth(PixelUtils.dpToPix(5));
+        filteredPlot.addSeries(seriesPeaks, peakFormatter);
 
         // Draws the threshold line for peak detection
         List<Double> thresholdNumbers = Collections.nCopies(this.plotSize,HeartRateMonitor.PEAK_DETECTION_THRESHOLD);
@@ -100,15 +110,6 @@ public class PlotManager {
         LineAndPointFormatter thresholdFormatter = new LineAndPointFormatter(Color.WHITE, null, null, null);
         filteredPlot.addSeries(seriesPeakDetectionThreshold, thresholdFormatter);
 
-        List<Double> peakDetectionDotNumbers = Collections.nCopies(this.plotSize,1000.0); // Set to some high value that will be off the chart
-        seriesPeaks = new SimpleXYSeries(
-                peakDetectionDotNumbers,
-                SimpleXYSeries.ArrayFormat.Y_VALS_ONLY, // use array indices as x values and array values as y values
-                "Peaks" // series title
-        );
-        LineAndPointFormatter peakFormatter = new LineAndPointFormatter(null, Color.WHITE, null, null);
-        peakFormatter.getVertexPaint().setStrokeWidth(PixelUtils.dpToPix(5));
-        filteredPlot.addSeries(seriesPeaks, peakFormatter);
     }
 
 

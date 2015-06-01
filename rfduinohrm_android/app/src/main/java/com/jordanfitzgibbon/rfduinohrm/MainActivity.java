@@ -52,8 +52,8 @@ public class MainActivity extends ActionBarActivity implements BluetoothAdapter.
     private ServiceConnection rfduinoServiceConnection;
 
     private TextView dataTextView;
+    private TextView connectionTextView;
     private EditText connectEditText;
-    private Button enableBluetoothButton;
     private TextView scanStatusText;
     private Button scanButton;
     private TextView deviceInfoText;
@@ -112,6 +112,8 @@ public class MainActivity extends ActionBarActivity implements BluetoothAdapter.
         }
 
         connectEditText = (EditText) findViewById(R.id.editTextConnect);
+        dataTextView = (TextView) findViewById(R.id.textViewData);
+        connectionTextView = (TextView) findViewById(R.id.textViewConnection);
 
         scanButton = (Button) findViewById(R.id.buttonScan);
         scanButton.setOnClickListener(new View.OnClickListener() {
@@ -162,7 +164,7 @@ public class MainActivity extends ActionBarActivity implements BluetoothAdapter.
             }
         });
 
-        dataTextView = (TextView) findViewById(R.id.textViewData);
+
 
     }
 
@@ -173,10 +175,6 @@ public class MainActivity extends ActionBarActivity implements BluetoothAdapter.
         registerReceiver(scanModeReceiver, new IntentFilter(BluetoothAdapter.ACTION_SCAN_MODE_CHANGED));
         registerReceiver(bluetoothStateReceiver, new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED));
         registerReceiver(rfduinoReceiver, RFduinoService.getIntentFilter());
-
-//        if(state <= STATE_DISCONNECTED) {
-//            //updateState(bluetoothAdapter.isEnabled() ? STATE_DISCONNECTED : STATE_BLUETOOTH_OFF);
-//        }
 
     }
 
@@ -209,30 +207,26 @@ public class MainActivity extends ActionBarActivity implements BluetoothAdapter.
     }
 
     @Override
-    protected void onPause() {
-        super.onPause();
-    }
-
-    @Override
     public void onLeScan(BluetoothDevice device, final int rssi, final byte[] scanRecord) {
         bluetoothAdapter.stopLeScan(this);
         scanning = false;
 
         String deviceName = device.getName();
-        final String infoText = BluetoothHelper.getDeviceInfoText(device, rssi, scanRecord);
+        String infoText = BluetoothHelper.getDeviceInfoText(device, rssi, scanRecord);
         String targetDevice = connectEditText.getText().toString().substring(0, Math.min(14, connectEditText.getText().toString().length()));
         if (deviceName.equals(targetDevice)) {
             bluetoothDevice = device;
         }
         else
         {
-            Log.d(TAG, "Looking for " + targetDevice + " but found " + deviceName);
+            infoText = "Looking for " + targetDevice + " but found " + deviceName;
         }
 
+        final String finalInfoText = infoText;
         MainActivity.this.runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                dataTextView.setText(infoText);
+                connectionTextView.setText(finalInfoText);
             }
         });
     }
@@ -339,17 +333,17 @@ public class MainActivity extends ActionBarActivity implements BluetoothAdapter.
     };
 
 
-    @Override
-    public void  onNewIntent(Intent intent) {
-        Log.w("Main", "onNewintent called");
-    }
+//    @Override
+//    public void  onNewIntent(Intent intent) {
+//        Log.w("Main", "onNewintent called");
+//    }
 
     private void addData(byte[] data) {
 
         Float floatValue = bytesToFloat(data);
 
         // Prepend and trim this display text
-        int maxLength = 400;
+        int maxLength = 1000;
         if (samplesText.length() >= maxLength) {
             samplesText = floatValue.toString();
         }

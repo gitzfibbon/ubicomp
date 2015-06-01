@@ -8,7 +8,7 @@ void setup() {
 
   // Configure and start BLE
   RFduinoBLE.deviceName = "jordanfitzgibbon";
-  RFduinoBLE.advertisementData = "jordanfitzgibbon";
+  RFduinoBLE.advertisementData = "1234567890";
   RFduinoBLE.begin();
 
   pinMode(pulseSensor, INPUT);
