@@ -23,8 +23,7 @@ public class HeartRateMonitor {
     // Size of the FFT. Effective size is half of this.
     public static final int FFT_SIZE = 128;
 
-    // A sample must change slope and cross this threshold to be considered a heartbeat
-    // This is actually a 'valley'
+    // A sample must change slope and cross above this threshold to be considered a heartbeat
     public static final double PEAK_DETECTION_THRESHOLD = 25;
 
     public HeartRateMonitor(Float firstSample) {
@@ -176,7 +175,7 @@ public class HeartRateMonitor {
         double previousSlope = this.deMeanedSamples.get(x) - this.deMeanedSamples.get(previousX);
         double nextSlope = this.deMeanedSamples.get(nextX) - this.deMeanedSamples.get(x);
 
-        if (previousSlope < 0 && nextSlope > 0 && this.deMeanedSamples.get(x) <= this.PEAK_DETECTION_THRESHOLD) {
+        if (previousSlope > 0 && nextSlope < 0 && this.deMeanedSamples.get(x) >= this.PEAK_DETECTION_THRESHOLD) {
             // this is a peak
             return true;
         }

@@ -67,7 +67,7 @@ public class PlotManager {
 
     public void ConfigureFilteredPlot() {
 
-        double rangeBoundary = 100;
+        double rangeBoundary = 150;
         filteredPlot.setRangeBoundaries(-1 * rangeBoundary, rangeBoundary, BoundaryMode.FIXED);
         filteredPlot.setDomainBoundaries(0, plotSize, BoundaryMode.FIXED);
 
@@ -128,7 +128,7 @@ public class PlotManager {
 
     public void ConfigureRawPlot() {
 
-        double rangeBoundary = 700;
+        double rangeBoundary = 800;
         rawPlot.setRangeBoundaries(0, rangeBoundary, BoundaryMode.FIXED);
         rawPlot.setDomainBoundaries(0, this.plotSize, BoundaryMode.FIXED);
 

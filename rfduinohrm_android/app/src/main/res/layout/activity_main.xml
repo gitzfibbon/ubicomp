@@ -17,7 +17,7 @@
 
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="30dp"
+            android:layout_height="40dp"
             android:orientation="horizontal" >
 
 
@@ -25,7 +25,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textAppearance="?android:attr/textAppearanceMedium"
-                android:text="Connect to:"
+                android:text="Find device:"
                 android:id="@+id/textViewConnect"
                 android:gravity="center_vertical"
                 android:textSize="18dp"
@@ -35,7 +35,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:id="@+id/editTextConnect"
-                android:text="jordanfitzgibbon"  />
+                android:text="jordanfitzgibbon" />
 
             <Button
                 android:layout_width="wrap_content"
@@ -67,18 +67,46 @@
             android:orientation="horizontal" >
 
             <TextView
-                android:layout_width="wrap_content"
+                android:layout_width="275dp"
                 android:layout_height="wrap_content"
                 android:text="Connection Info"
                 android:id="@+id/textViewConnection" />
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="-"
-                android:textSize="20dp"
-                android:id="@+id/textViewPeakDetectionHr" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="100dp"
+                android:orientation="vertical" >
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Peak Detection HR"
+                    android:textSize="15dp"
+                    android:id="@+id/textViewPeakDetectionHrLabel" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="-"
+                    android:textSize="50dp"
+                    android:id="@+id/textViewPeakDetectionHr" />
+            </LinearLayout>
 
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="100dp"
+                android:orientation="vertical" >
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="FFT HR"
+                    android:textSize="15dp"
+                    android:id="@+id/textViewFftHrLabel" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="-"
+                    android:textSize="50dp"
+                    android:id="@+id/textViewFftHr" />
+            </LinearLayout>
 
         </LinearLayout>
 

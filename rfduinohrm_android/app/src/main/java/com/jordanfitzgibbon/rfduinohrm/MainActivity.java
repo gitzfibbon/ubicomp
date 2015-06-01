@@ -418,7 +418,7 @@ public class MainActivity extends ActionBarActivity implements BluetoothAdapter.
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    textViewPeakDetectionHr.setText("Heart Rate: " + heartRate);
+                    textViewPeakDetectionHr.setText(Integer.toString(heartRate));
                 }
             });
         }
