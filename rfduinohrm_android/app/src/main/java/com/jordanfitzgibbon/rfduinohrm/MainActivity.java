@@ -29,15 +29,16 @@ public class MainActivity extends ActionBarActivity implements BluetoothAdapter.
 
     final private String TAG = "HRM_MainActivity";
 
-
     private HeartRateMonitor heartRateMonitor;
     private PlotManager plotManager;
 
-    // State machine
-    final private static int STATE_BLUETOOTH_OFF = 1;
-    final private static int STATE_DISCONNECTED = 2;
-    final private static int STATE_CONNECTING = 3;
-    final private static int STATE_CONNECTED = 4;
+    private String samplesText = "no data";
+
+//    // State machine
+//    final private static int STATE_BLUETOOTH_OFF = 1;
+//    final private static int STATE_DISCONNECTED = 2;
+//    final private static int STATE_CONNECTING = 3;
+//    final private static int STATE_CONNECTED = 4;
 
     private int state;
 
@@ -173,9 +174,9 @@ public class MainActivity extends ActionBarActivity implements BluetoothAdapter.
         registerReceiver(bluetoothStateReceiver, new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED));
         registerReceiver(rfduinoReceiver, RFduinoService.getIntentFilter());
 
-        if(state <= STATE_DISCONNECTED) {
-            //updateState(bluetoothAdapter.isEnabled() ? STATE_DISCONNECTED : STATE_BLUETOOTH_OFF);
-        }
+//        if(state <= STATE_DISCONNECTED) {
+//            //updateState(bluetoothAdapter.isEnabled() ? STATE_DISCONNECTED : STATE_BLUETOOTH_OFF);
+//        }
 
     }
 
@@ -255,9 +256,9 @@ public class MainActivity extends ActionBarActivity implements BluetoothAdapter.
                     Intent stopIntent = new Intent(getApplicationContext(),RFduinoService.class);
                     getApplicationContext().stopService(stopIntent);
                     fromNotification = false;
-                    if(state<STATE_CONNECTED) {
-                        disconnect();
-                    }
+//                    if(state<STATE_CONNECTED) {
+//                        disconnect();
+//                    }
                     //updateUi();
                 }
                 else{
@@ -291,13 +292,13 @@ public class MainActivity extends ActionBarActivity implements BluetoothAdapter.
         else{ Log.w("Main","ServiceConnection empty");}
     }
 
-    private String bytesToFloat(byte[] data)
+    private Float bytesToFloat(byte[] data)
     {
         Float value = -3.0f;
         if (data.length == 4) {
             value = ByteBuffer.wrap(data).order(ByteOrder.LITTLE_ENDIAN).getFloat();
         }
-        return value.toString();
+        return value;
     }
 
 
@@ -344,25 +345,26 @@ public class MainActivity extends ActionBarActivity implements BluetoothAdapter.
     }
 
     private void addData(byte[] data) {
-        dataTextView.append("|" + bytesToFloat(data));
-//        View view = getLayoutInflater().inflate(android.R.layout.simple_list_item_2, dataLayout, false);
-//
-//        TextView text1 = (TextView) view.findViewById(android.R.id.text1);
-//        text1.setText(HexAsciiHelper.bytesToHex(data));
-//        text1.setText(this.bytesToFloat(data));
-//
-//        String ascii = HexAsciiHelper.bytesToAsciiMaybe(data);
-//        if (ascii != null) {
-//            TextView text2 = (TextView) view.findViewById(android.R.id.text2);
-//            text2.setText(ascii);
-//        }
-//
-//        dataLayout.addView(
-//                view, LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+
+        Float floatValue = bytesToFloat(data);
+
+        // Prepend and trim this display text
+        int maxLength = 200;
+        if (samplesText.length() >= maxLength) {
+            samplesText = floatValue.toString();
+        }
+        else {
+            samplesText = samplesText + "|" + floatValue.toString();
+        }
+
+        // Make sure to trim down the text size to maxLength
+        samplesText = samplesText.substring(0, Math.min(maxLength, samplesText.length()));
+
+        dataTextView.setText(samplesText);
+        this.NewSample(floatValue);
     }
 
-    @Override
-    public void manageNewSample(Float sample) {
+    public int NewSample(Float sample) {
 
         // Increment the sample count. We use it to calculate current FPS.
         //this.sampleCount++;
@@ -419,8 +421,9 @@ public class MainActivity extends ActionBarActivity implements BluetoothAdapter.
 //            });
 //        }
 
-        // Return the frame to be displayed on the device
-        return this.heartRateMonitor.GetLastMat();
+        // Return the newly calculated heart rate
+        int heartRate = 13;
+        return heartRate;
     }
 
     private int ConvertNanoToMs(long nanoTime) {
