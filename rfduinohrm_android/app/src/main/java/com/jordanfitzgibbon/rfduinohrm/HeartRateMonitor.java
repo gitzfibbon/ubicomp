@@ -15,9 +15,13 @@ public class HeartRateMonitor {
     // How many samples to keep in memory
     private final int RECENT_VALUES_SIZE = 500;
 
+    // After a peak is detected we mus wait for a zero crossing (from + to -) before we can count the next one
+    private boolean waitingForZeroCross = false;
+
     // Data structures to store samples
     private ArrayList<Float> rfduinoSamples;
     private ArrayList<Float> deMeanedSamples;
+    private ArrayList<Boolean> peaks;
 //    private ArrayList<Scalar> medianFiltered;
 
     // Size of the FFT. Effective size is half of this.
@@ -26,11 +30,15 @@ public class HeartRateMonitor {
     // A sample must change slope and cross above this threshold to be considered a heartbeat
     public static final double PEAK_DETECTION_THRESHOLD = 25;
 
+    // A sample must cross below this threshold to be counted as a zero crossing
+    public static final double ZERO_CROSS_THRESHOLD = 0;
+
     public HeartRateMonitor(Float firstSample) {
 
         // Initialize recent values with copies of the first frame
         this.rfduinoSamples = new ArrayList<Float>(Collections.nCopies(RECENT_VALUES_SIZE, firstSample));
         this.deMeanedSamples = new ArrayList<Float>(Collections.nCopies(RECENT_VALUES_SIZE, GetLastDemeanedSampleHelper()));
+        this.peaks = new ArrayList<Boolean>(Collections.nCopies(RECENT_VALUES_SIZE, false));
 //        this.medianFiltered = new ArrayList<Scalar>(Collections.nCopies(RECENT_VALUES_SIZE, this.GetLastMedianFilteredHelper()));
     }
 
@@ -42,6 +50,16 @@ public class HeartRateMonitor {
 
         this.deMeanedSamples.remove(0);
         this.deMeanedSamples.add(this.GetLastDemeanedSampleHelper());
+
+        // Check if we've crossed zero and can start counting peaks again
+        if (this.waitingForZeroCross && this.GetLastDeMeanedSample() < HeartRateMonitor.ZERO_CROSS_THRESHOLD)
+        {
+            this.waitingForZeroCross = false;
+        }
+
+        this.peaks.remove(0);
+        this.peaks.set(RECENT_VALUES_SIZE-2, this.DetectPeak()); // You need 3 values to detect a peak. Calculate the second from last item in the array.
+        this.peaks.add(false);
 
 //        this.medianFiltered.remove(0);
 //        this.medianFiltered.add(this.GetLastMedianFilteredHelper());
@@ -75,6 +93,12 @@ public class HeartRateMonitor {
         Float demeanedSample = this.GetLastSample() - mean;
 
         return demeanedSample;
+    }
+
+    // Gets the most peak value in the second from last index (the last will always be false since it can't be calculated yet)
+    public Boolean GetSecondFromLastPeak() {
+        Boolean peak = peaks.get(RECENT_VALUES_SIZE - 2);
+        return peak;
     }
 
     // Get the most recently stored median filtered mean Scalar
@@ -172,11 +196,19 @@ public class HeartRateMonitor {
 //            return false;
 //        }
 
+        // After a peak is detected we must wait for a sample value to go below zero before we can count another peak
+        // Otherwise, we may count false heartbeats
+        if (this.waitingForZeroCross)
+        {
+            return false;
+        }
+
         double previousSlope = this.deMeanedSamples.get(x) - this.deMeanedSamples.get(previousX);
         double nextSlope = this.deMeanedSamples.get(nextX) - this.deMeanedSamples.get(x);
 
         if (previousSlope > 0 && nextSlope < 0 && this.deMeanedSamples.get(x) >= this.PEAK_DETECTION_THRESHOLD) {
             // this is a peak
+            this.waitingForZeroCross = true;
             return true;
         }
         else {
@@ -203,7 +235,8 @@ public class HeartRateMonitor {
         Log.d(TAG, "Total Samples being used: " + totalSamplesUsed);
 
         for (int i = 0; i < totalSamplesUsed-2; i++) {
-            if ( this.DetectPeak(RECENT_VALUES_SIZE-i-3,RECENT_VALUES_SIZE-i-2,RECENT_VALUES_SIZE-1) ) {
+            //if ( this.DetectPeak(RECENT_VALUES_SIZE-i-3,RECENT_VALUES_SIZE-i-2,RECENT_VALUES_SIZE-1) ) {
+            if ( this.peaks.get(i) == true ) {
                 totalPeaks++;
             }
         }

@@ -24,6 +24,7 @@ public class PlotManager {
 
     // Used for peak detection and goes on the filtered plot
     SimpleXYSeries seriesPeakDetectionThreshold;
+    SimpleXYSeries seriesZeroCrossThreshold;
     SimpleXYSeries seriesPeaks;
 
     // Plots raw samples from the rfduino
@@ -100,18 +101,27 @@ public class PlotManager {
         peakFormatter.getVertexPaint().setStrokeWidth(PixelUtils.dpToPix(5));
         filteredPlot.addSeries(seriesPeaks, peakFormatter);
 
+        // Draws the threshold line for zero crossing
+        List<Double> zeroCrossThresholdNumbers = Collections.nCopies(this.plotSize,HeartRateMonitor.ZERO_CROSS_THRESHOLD);
+        seriesZeroCrossThreshold = new SimpleXYSeries(
+                zeroCrossThresholdNumbers,
+                SimpleXYSeries.ArrayFormat.Y_VALS_ONLY, // use array indices as x values and array values as y values
+                "Zero Cross Threshold " + HeartRateMonitor.ZERO_CROSS_THRESHOLD // series title
+        );
+        LineAndPointFormatter zeroCrossThresholdFormatter = new LineAndPointFormatter(Color.WHITE, null, null, null);
+        filteredPlot.addSeries(seriesZeroCrossThreshold, zeroCrossThresholdFormatter);
+
         // Draws the threshold line for peak detection
-        List<Double> thresholdNumbers = Collections.nCopies(this.plotSize,HeartRateMonitor.PEAK_DETECTION_THRESHOLD);
+        List<Double> peakDetectionThresholdNumbers = Collections.nCopies(this.plotSize,HeartRateMonitor.PEAK_DETECTION_THRESHOLD);
         seriesPeakDetectionThreshold = new SimpleXYSeries(
-                thresholdNumbers,
+                peakDetectionThresholdNumbers,
                 SimpleXYSeries.ArrayFormat.Y_VALS_ONLY, // use array indices as x values and array values as y values
                 "Peak Threshold " + HeartRateMonitor.PEAK_DETECTION_THRESHOLD // series title
         );
-        LineAndPointFormatter thresholdFormatter = new LineAndPointFormatter(Color.WHITE, null, null, null);
-        filteredPlot.addSeries(seriesPeakDetectionThreshold, thresholdFormatter);
+        LineAndPointFormatter peakDetectionThresholdFormatter = new LineAndPointFormatter(Color.WHITE, null, null, null);
+        filteredPlot.addSeries(seriesPeakDetectionThreshold, peakDetectionThresholdFormatter);
 
     }
-
 
 
     public void UpdateRawPlot(Float sample) {

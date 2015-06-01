@@ -80,7 +80,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Peak Detection HR"
-                    android:textSize="15dp"
+                    android:textSize="18dp"
                     android:id="@+id/textViewPeakDetectionHrLabel" />
                 <TextView
                     android:layout_width="wrap_content"
@@ -98,7 +98,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="FFT HR"
-                    android:textSize="15dp"
+                    android:textSize="18dp"
                     android:id="@+id/textViewFftHrLabel" />
                 <TextView
                     android:layout_width="wrap_content"
