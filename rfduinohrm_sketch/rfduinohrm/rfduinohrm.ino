@@ -27,7 +27,7 @@ void setup() {
 int i=0;
 const int batchSize = 10;
 int values[batchSize];
-int delayMs = 50;
+int delayMs = 100;
 
 void loop() {
     

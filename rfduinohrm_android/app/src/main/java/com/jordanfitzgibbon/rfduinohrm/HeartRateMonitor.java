@@ -234,7 +234,7 @@ public class HeartRateMonitor {
 
         Log.d(TAG, "Total Samples being used: " + totalSamplesUsed);
 
-        for (int i = 0; i < totalSamplesUsed-2; i++) {
+        for (int i = RECENT_VALUES_SIZE - totalSamplesUsed; i < RECENT_VALUES_SIZE; i++) {
             if ( this.peaks.get(i) == true ) {
                 totalPeaks++;
             }
@@ -250,21 +250,13 @@ public class HeartRateMonitor {
 
         // Figure out how many samples to pull in order to calculate a heartrate from the desired window time
         // Eg. if we sample at 20Hz and want to calculate hr based on the last 10 seconds then we need to pull 20*10 samples
-        int totalSamplesNeeded = windowInSeconds * sampleRateHz;
-
-        // If we don't have enough samples available, adjust the window
-        if (totalSamplesNeeded > RECENT_VALUES_SIZE)
-        {
-            windowInSeconds = RECENT_VALUES_SIZE / sampleRateHz;
-        }
-
-        int totalSamplesUsed = Math.min(RECENT_VALUES_SIZE, totalSamplesNeeded);
+        int totalSamplesNeeded = Math.min(RECENT_VALUES_SIZE, windowInSeconds * sampleRateHz);
 
         boolean firstPeakFound = false;
         ArrayList<Integer> intervals = new ArrayList<>();
         int currentIntervalSize = 0;
 
-        for (int i = 0; i < totalSamplesUsed-2; i++) {
+        for (int i = RECENT_VALUES_SIZE - totalSamplesNeeded; i < RECENT_VALUES_SIZE; i++) {
 
             // Loop until we find the first peak. We ignore data before it since we don't know when the previous peak occurred.
             if (firstPeakFound == false) {
@@ -314,13 +306,7 @@ public class HeartRateMonitor {
         Float windowMultiplier = 60f / windowInSeconds;
 
         //int heartRate = (int) (this.CountPeaks(windowInSeconds, sampleRateHz) * windowMultiplier);
-        int heartRate = 0;
-
-//        if (heartRate < 45 || heartRate > 220)
-//        {
-//            // There is no useful heart rate data
-//            return 0;
-//        }
+        int heartRate = this.GetHrFromAvgPeakInterval(windowInSeconds, sampleRateHz);
 
         return  heartRate;
     }

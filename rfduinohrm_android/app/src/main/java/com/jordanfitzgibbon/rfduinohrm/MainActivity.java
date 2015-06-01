@@ -12,6 +12,7 @@ import android.os.IBinder;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.util.TypedValue;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -217,7 +218,8 @@ public class MainActivity extends ActionBarActivity implements BluetoothAdapter.
         super.onResume();
 
         // Set up a timer for recalculating heart rate
-        this.lastUpdateTime = System.nanoTime();
+        //this.lastUpdateTime = System.nanoTime();
+        this.lastUpdateTime = System.currentTimeMillis();
     }
 
     @Override
@@ -398,10 +400,14 @@ public class MainActivity extends ActionBarActivity implements BluetoothAdapter.
 
         // Check if the current interval is over
         long nanoTime = System.nanoTime();
-        if (this.ConvertNanoToMs(nanoTime - lastUpdateTime) >= this.refreshIntervalMs) {
+        long millisTime = System.currentTimeMillis();
+        long diff = millisTime - lastUpdateTime;
+        if (millisTime - lastUpdateTime >= this.refreshIntervalMs) {
+//        if (this.ConvertNanoToMs(nanoTime - lastUpdateTime) >= this.refreshIntervalMs) {
 
             // Reset the last updated time
-            this.lastUpdateTime = nanoTime;
+            //this.lastUpdateTime = nanoTime;
+            this.lastUpdateTime = System.currentTimeMillis();
 
 //            // Update the FFT plot
 //            int fftWindowInSeconds = 10;
@@ -409,13 +415,7 @@ public class MainActivity extends ActionBarActivity implements BluetoothAdapter.
 //            this.plotManager.UpdateFFTPlot(fftMags);
 
             // Get heart rate using a window of this many seconds
-            int useWindowInSeconds = 12;
-
-            if (this.heartRate < 35 || this.heartRate > 300)
-            {
-                // Use a shorter window since the calculation hasn't stabilized
-                useWindowInSeconds = 6;
-            }
+            int useWindowInSeconds = 6;
 
             this.heartRate = heartRateMonitor.GetHeartRate(useWindowInSeconds, this.sampleRateHz);
             Log.d(TAG, "Heart Rate: " + heartRate);
@@ -424,6 +424,13 @@ public class MainActivity extends ActionBarActivity implements BluetoothAdapter.
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
+
+                    if (heartRate < 30 || heartRate > 250) {
+                        textViewPeakDetectionHr.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 30);
+                    }
+                    else {
+                        textViewPeakDetectionHr.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 50);
+                    }
                     textViewPeakDetectionHr.setText(Integer.toString(heartRate));
                 }
             });
