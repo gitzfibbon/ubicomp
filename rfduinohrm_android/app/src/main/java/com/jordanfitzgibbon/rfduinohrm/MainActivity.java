@@ -425,7 +425,7 @@ public class MainActivity extends ActionBarActivity implements BluetoothAdapter.
                 @Override
                 public void run() {
 
-                    if (heartRate < 30 || heartRate > 250) {
+                    if (heartRate < 40 || heartRate > 250) {
                         textViewPeakDetectionHr.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 30);
                     }
                     else {
