@@ -25,7 +25,7 @@ public class HeartRateMonitor {
 
     // A sample must change slope and cross this threshold to be considered a heartbeat
     // This is actually a 'valley'
-    public static final double PEAK_DETECTION_THRESHOLD = -0.7;
+    public static final double PEAK_DETECTION_THRESHOLD = 25;
 
     public HeartRateMonitor(Float firstSample) {
 
@@ -166,35 +166,44 @@ public class HeartRateMonitor {
     // Use the de-meaned values for peak detection
     public boolean DetectPeak(int previousX, int x, int nextX)
     {
-
-//        // Ignore rfduinoSamples that do not have a high mean RED value of 150
-//        int minRedValue = 175;
-//        boolean highRedValue = Core.mean(this.mats.get(x)).val[RED] >= minRedValue;
-//        if (!highRedValue)
+//        // Ignore samples that exceed the max feasible value
+//        Float maxValue = 175f;
+//        if (this.deMeanedSamples.get(x) > maxValue)
 //        {
 //            return false;
 //        }
-//
-//        double previousSlope = this.deMeanedMeans.get(x).val[RED] - this.deMeanedMeans.get(previousX).val[RED];
-//        double nextSlope = this.deMeanedMeans.get(nextX).val[RED] - this.deMeanedMeans.get(x).val[RED];
-//
-//        if (previousSlope < 0 && nextSlope > 0 && this.deMeanedMeans.get(x).val[RED] <= this.PEAK_DETECTION_THRESHOLD) {
-//            // this is a peak
-//            return true;
-//        }
 
-        return false;
+        double previousSlope = this.deMeanedSamples.get(x) - this.deMeanedSamples.get(previousX);
+        double nextSlope = this.deMeanedSamples.get(nextX) - this.deMeanedSamples.get(x);
+
+        if (previousSlope < 0 && nextSlope > 0 && this.deMeanedSamples.get(x) <= this.PEAK_DETECTION_THRESHOLD) {
+            // this is a peak
+            return true;
+        }
+        else {
+            return false;
+        }
+
     }
 
-    private int GetPeaks(int windowInSeconds, double FPS) {
+    private int GetPeaks(int windowInSeconds, int sampleRateHz) {
 
-        int totalSamples = (int)Math.round(windowInSeconds * FPS);
-        totalSamples = Math.min(RECENT_VALUES_SIZE, totalSamples);
+        // Figure out how many samples to pull in order to calculate a heartrate from the desired window time
+        // Eg. if we sample at 20Hz and want to calculate hr based on the last 10 seconds then we need to pull 20*10 samples
+        int totalSamplesNeeded = windowInSeconds * sampleRateHz;
+
+        // If we don't have enough samples available, adjust the window
+        if (totalSamplesNeeded > RECENT_VALUES_SIZE)
+        {
+            windowInSeconds = RECENT_VALUES_SIZE / sampleRateHz;
+        }
+
+        int totalSamplesUsed = Math.min(RECENT_VALUES_SIZE, totalSamplesNeeded);
         int totalPeaks = 0;
 
-        Log.d(TAG, "Total Samples: " + totalSamples);
+        Log.d(TAG, "Total Samples being used: " + totalSamplesUsed);
 
-        for (int i = 0; i<totalSamples-2; i++) {
+        for (int i = 0; i < totalSamplesUsed-2; i++) {
             if ( this.DetectPeak(RECENT_VALUES_SIZE-i-3,RECENT_VALUES_SIZE-i-2,RECENT_VALUES_SIZE-1) ) {
                 totalPeaks++;
             }
@@ -205,14 +214,18 @@ public class HeartRateMonitor {
         return totalPeaks;
     }
 
-    public int GetHeartRate(double FPS) {
-        int heartRate = this.GetPeaks(10, FPS) * 6;
+    public int GetHeartRate(int sampleRateHz) {
 
-        if (heartRate < 45 || heartRate > 220)
-        {
-            // There is no useful heart rate data
-            return 0;
-        }
+        int windowInSeconds = 10; // Count peaks within this many recent seconds
+        Float windowMultiplier = 60f / windowInSeconds; // Multiple this by windowInSeconds to get the peaks within 60 seconds
+
+        int heartRate = (int) (this.GetPeaks(windowInSeconds, sampleRateHz) * windowMultiplier);
+
+//        if (heartRate < 45 || heartRate > 220)
+//        {
+//            // There is no useful heart rate data
+//            return 0;
+//        }
 
         return  heartRate;
     }

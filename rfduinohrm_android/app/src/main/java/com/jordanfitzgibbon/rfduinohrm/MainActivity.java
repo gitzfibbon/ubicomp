@@ -32,13 +32,18 @@ public class MainActivity extends ActionBarActivity implements BluetoothAdapter.
     private HeartRateMonitor heartRateMonitor;
     private PlotManager plotManager;
 
-    private String samplesText = "no data";
+    private int sampleRateHz = 20; // The rate at which the rfduino is sampling
 
-//    // State machine
-//    final private static int STATE_BLUETOOTH_OFF = 1;
-//    final private static int STATE_DISCONNECTED = 2;
-//    final private static int STATE_CONNECTING = 3;
-//    final private static int STATE_CONNECTED = 4;
+    // For keeping track of time
+    long lastUpdateTime;
+
+    // How often to refresh the FFT and heart rate
+    private final int refreshIntervalMs = 2000;
+
+    // Keeps track of how many samples were collected in the current interval
+    private int sampleCount = 0;
+
+    private int heartRate = 0;
 
     private int state;
 
@@ -51,20 +56,24 @@ public class MainActivity extends ActionBarActivity implements BluetoothAdapter.
     private RFduinoService rfduinoService;
     private ServiceConnection rfduinoServiceConnection;
 
+    private String samplesText = "no data";
     private TextView dataTextView;
     private TextView connectionTextView;
     private EditText connectEditText;
-    private TextView scanStatusText;
+
+    private TextView textViewPeakDetectionHr;
+
+//    private TextView scanStatusText;
     private Button scanButton;
-    private TextView deviceInfoText;
-    private TextView connectionStatusText;
+//    private TextView deviceInfoText;
+//    private TextView connectionStatusText;
     private Button connectButton;
     private Button disconnectButton;
     //private EditData valueEdit;
-    private Button sendZeroButton;
-    private Button sendValueButton;
-    private Button clearButton;
-    private LinearLayout dataLayout;
+//    private Button sendZeroButton;
+//    private Button sendValueButton;
+//    private Button clearButton;
+//    private LinearLayout dataLayout;
 
     //private RetainedFragment dataFragment;
     private boolean serviceBound;
@@ -114,6 +123,7 @@ public class MainActivity extends ActionBarActivity implements BluetoothAdapter.
         connectEditText = (EditText) findViewById(R.id.editTextConnect);
         dataTextView = (TextView) findViewById(R.id.textViewData);
         connectionTextView = (TextView) findViewById(R.id.textViewConnection);
+        textViewPeakDetectionHr = (TextView) findViewById(R.id.textViewPeakDetectionHr);
 
         scanButton = (Button) findViewById(R.id.buttonScan);
         scanButton.setOnClickListener(new View.OnClickListener() {
@@ -204,6 +214,9 @@ public class MainActivity extends ActionBarActivity implements BluetoothAdapter.
     @Override
     protected  void onResume() {
         super.onResume();
+
+        // Set up a timer for recalculating heart rate
+        this.lastUpdateTime = System.nanoTime();
     }
 
     @Override
@@ -306,7 +319,7 @@ public class MainActivity extends ActionBarActivity implements BluetoothAdapter.
             } else if (RFduinoService.ACTION_DISCONNECTED.equals(action)) {
                 //downgradeState(STATE_DISCONNECTED);
             } else if (RFduinoService.ACTION_DATA_AVAILABLE.equals(action)) {
-                addData(intent.getByteArrayExtra(RFduinoService.EXTRA_DATA));
+                AddNewData(intent.getByteArrayExtra(RFduinoService.EXTRA_DATA));
             }
         }
     };
@@ -338,12 +351,13 @@ public class MainActivity extends ActionBarActivity implements BluetoothAdapter.
 //        Log.w("Main", "onNewintent called");
 //    }
 
-    private void addData(byte[] data) {
+    // Handle new data received from the device
+    private void AddNewData(byte[] data) {
 
         Float floatValue = bytesToFloat(data);
 
-        // Prepend and trim this display text
-        int maxLength = 1000;
+        // Append and trim this display text
+        int maxLength = 1500;
         if (samplesText.length() >= maxLength) {
             samplesText = floatValue.toString();
         }
@@ -355,10 +369,13 @@ public class MainActivity extends ActionBarActivity implements BluetoothAdapter.
         samplesText = samplesText.substring(0, Math.min(maxLength, samplesText.length()));
 
         dataTextView.setText(samplesText);
-        this.NewSample(floatValue);
+
+        // Add this new data sample to hr calculation
+        this.AddNewSample(floatValue);
     }
 
-    public int NewSample(Float sample) {
+    // Update HR calculation with this new sample
+    public int AddNewSample(Float sample) {
 
         // Increment the sample count. We use it to calculate current FPS.
         //this.sampleCount++;
@@ -381,39 +398,32 @@ public class MainActivity extends ActionBarActivity implements BluetoothAdapter.
 //        Float medianFiltered = this.heartRateMonitor.GetLastMedianFiltered();
         plotManager.UpdateFilteredPlot(deMeanedSample, isPeak);
 
-//        // Check if the current interval is over
-//        long nanoTime = System.nanoTime();
-//        if (this.ConvertNanoToMs(nanoTime - lastUpdateTime) >= this.refreshIntervalMs) {
-//
-//            // Reset the last updated time
-//            this.lastUpdateTime = nanoTime;
-//
-//            // Update the FPS variable with the average of the actual FPS of the current interval and the FPS of the previous interval
-//            double previousFPS = this.FPS;
-//            this.FPS = (this.sampleCount / (double)(this.refreshIntervalMs / 1000) + previousFPS) / 2;
-//            this.sampleCount = 0;
-//            Log.d(TAG, "FPS: " + this.FPS);
-//
+        // Check if the current interval is over
+        long nanoTime = System.nanoTime();
+        if (this.ConvertNanoToMs(nanoTime - lastUpdateTime) >= this.refreshIntervalMs) {
+
+            // Reset the last updated time
+            this.lastUpdateTime = nanoTime;
+
 //            // Update the FFT plot
 //            int fftWindowInSeconds = 10;
 //            float[] fftMags = this.heartRateMonitor.FFT(fftWindowInSeconds, (int)Math.round(this.FPS));
 //            this.plotManager.UpdateFFTPlot(fftMags);
-//
-//            // Get heart rate
-//            this.heartRate = heartRateMonitor.GetHeartRate(this.FPS);
-//            Log.d(TAG, "Heart Rate: " + heartRate);
-//
-//            // Update the UI with the heart rate
-//            runOnUiThread(new Runnable() {
-//                @Override
-//                public void run() {
-//                    textViewHeartRate.setText("Heart Rate: " + heartRate);
-//                }
-//            });
-//        }
+
+            // Get heart rate
+            this.heartRate = heartRateMonitor.GetHeartRate(this.sampleRateHz);
+            Log.d(TAG, "Heart Rate: " + heartRate);
+
+            // Update the UI with the heart rate
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    textViewPeakDetectionHr.setText("Heart Rate: " + heartRate);
+                }
+            });
+        }
 
         // Return the newly calculated heart rate
-        int heartRate = 13;
         return heartRate;
     }
 
