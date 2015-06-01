@@ -22,6 +22,7 @@ import android.widget.TextView;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.ArrayList;
 import java.util.UUID;
 
 
@@ -243,6 +244,7 @@ public class MainActivity extends ActionBarActivity implements BluetoothAdapter.
             }
         });
     }
+
     private ServiceConnection genServiceConnection() {
         return new ServiceConnection() {
             @Override
@@ -299,15 +301,6 @@ public class MainActivity extends ActionBarActivity implements BluetoothAdapter.
         else{ Log.w("Main","ServiceConnection empty");}
     }
 
-    private Float bytesToFloat(byte[] data)
-    {
-        Float value = -3.0f;
-        if (data.length == 4) {
-            value = ByteBuffer.wrap(data).order(ByteOrder.LITTLE_ENDIAN).getFloat();
-        }
-        return value;
-    }
-
 
     private final BroadcastReceiver rfduinoReceiver = new BroadcastReceiver() {
         @Override
@@ -345,7 +338,6 @@ public class MainActivity extends ActionBarActivity implements BluetoothAdapter.
         }
     };
 
-
 //    @Override
 //    public void  onNewIntent(Intent intent) {
 //        Log.w("Main", "onNewintent called");
@@ -354,31 +346,38 @@ public class MainActivity extends ActionBarActivity implements BluetoothAdapter.
     // Handle new data received from the device
     private void AddNewData(byte[] data) {
 
-        Float floatValue = bytesToFloat(data);
-
-        // Append and trim this display text
-        int maxLength = 1700;
-        if (samplesText.length() >= maxLength) {
-            samplesText = floatValue.toString();
-        }
-        else {
-            samplesText = samplesText + "|" + floatValue.toString();
+        if (data.length == 4) {
+            // It's a float - do something with it
+            // Float floatValue = BluetoothHelper.bytesToFloat(data);
         }
 
-        // Make sure to trim down the text size to maxLength
-        samplesText = samplesText.substring(0, Math.min(maxLength, samplesText.length()));
+        // This is the standard case
+        ArrayList<Float> values = BluetoothHelper.bytesToFloatArray(data);
 
-        dataTextView.setText(samplesText);
+        for (int i = 0; i < values.size(); i++) {
 
-        // Add this new data sample to hr calculation
-        this.AddNewSample(floatValue);
+            Float floatValue = values.get(i);
+
+            // Append and trim this display text
+            int maxLength = 1700;
+            if (samplesText.length() >= maxLength) {
+                samplesText = floatValue.toString();
+            } else {
+                samplesText = samplesText + "|" + floatValue.toString();
+            }
+
+            // Make sure to trim down the text size to maxLength
+            samplesText = samplesText.substring(0, Math.min(maxLength, samplesText.length()));
+
+            dataTextView.setText(samplesText);
+
+            // Add this new data sample to hr calculation
+            this.AddNewSample(floatValue);
+        }
     }
 
     // Update HR calculation with this new sample
     public int AddNewSample(Float sample) {
-
-        // Increment the sample count. We use it to calculate current FPS.
-        //this.sampleCount++;
 
         // Initialize HeartRateMonitor class
         if (this.heartRateMonitor == null) {
@@ -395,7 +394,6 @@ public class MainActivity extends ActionBarActivity implements BluetoothAdapter.
         // Plot the de-meaned mean RGB values, median filtered mean RGB values and peaks
         boolean isPeak = this.heartRateMonitor.GetSecondFromLastPeak();
         Float deMeanedSample = this.heartRateMonitor.GetLastDeMeanedSample();
-//        Float medianFiltered = this.heartRateMonitor.GetLastMedianFiltered();
         plotManager.UpdateFilteredPlot(deMeanedSample, isPeak);
 
         // Check if the current interval is over

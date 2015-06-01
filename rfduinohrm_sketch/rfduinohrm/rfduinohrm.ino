@@ -30,12 +30,12 @@ int values[batchSize];
 int delayMs = 50;
 
 void loop() {
-  
+    
   RFduino_ULPDelay( MILLISECONDS(delayMs) );
 
   float sensorValue = analogRead(pulseSensor);
   values[i] = (int)round(sensorValue);
-  Serial.println(values[i]);
+  Serial.println(i + ": " + values[i]);
   
   if (i >= batchSize - 1) {
 
@@ -44,7 +44,7 @@ void loop() {
     
     // Convert the batch to char array and send it
     char buf[20];
-    for (int i = 0; i < 10; i++){
+    for (int i = 0; i < batchSize; i++) {
  
       buf[2*i] = (char)highByte(values[i]);
       buf[2*i+1] = (char)lowByte(values[i]);
@@ -60,12 +60,13 @@ void loop() {
 
 
     Serial.println("Sending batch");
-//    RFduinoBLE.sendFloat(analogRead(pulseSensor));
+    // RFduinoBLE.sendFloat(analogRead(pulseSensor));
+  }
+  else {
+    // Increment i
+    i++;  
   }
   
-  
-  // Increment i
-  i++;
 
 }
 

@@ -106,7 +106,7 @@ public class PlotManager {
         seriesZeroCrossThreshold = new SimpleXYSeries(
                 zeroCrossThresholdNumbers,
                 SimpleXYSeries.ArrayFormat.Y_VALS_ONLY, // use array indices as x values and array values as y values
-                "Zero Cross Threshold " + HeartRateMonitor.ZERO_CROSS_THRESHOLD // series title
+                "Zero Cross " + HeartRateMonitor.ZERO_CROSS_THRESHOLD // series title
         );
         LineAndPointFormatter zeroCrossThresholdFormatter = new LineAndPointFormatter(Color.WHITE, null, null, null);
         filteredPlot.addSeries(seriesZeroCrossThreshold, zeroCrossThresholdFormatter);
@@ -116,7 +116,7 @@ public class PlotManager {
         seriesPeakDetectionThreshold = new SimpleXYSeries(
                 peakDetectionThresholdNumbers,
                 SimpleXYSeries.ArrayFormat.Y_VALS_ONLY, // use array indices as x values and array values as y values
-                "Peak Threshold " + HeartRateMonitor.PEAK_DETECTION_THRESHOLD // series title
+                "Peak Cross " + HeartRateMonitor.PEAK_DETECTION_THRESHOLD // series title
         );
         LineAndPointFormatter peakDetectionThresholdFormatter = new LineAndPointFormatter(Color.WHITE, null, null, null);
         filteredPlot.addSeries(seriesPeakDetectionThreshold, peakDetectionThresholdFormatter);
