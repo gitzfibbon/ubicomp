@@ -1,7 +1,5 @@
 package com.jordanfitzgibbon.rfduinohrm;
 
-import android.app.Activity;
-import android.app.FragmentManager;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.BroadcastReceiver;
@@ -10,7 +8,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
-import android.content.SharedPreferences;
 import android.os.IBinder;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
@@ -23,16 +20,18 @@ import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
-import org.w3c.dom.Text;
-
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.UUID;
 
 
-public class MainActivity extends Activity implements BluetoothAdapter.LeScanCallback {
+public class MainActivity extends ActionBarActivity implements BluetoothAdapter.LeScanCallback {
 
-    final private String TAG = "HRM";
+    final private String TAG = "HRM_MainActivity";
+
+
+    private HeartRateMonitor heartRateMonitor;
+    private PlotManager plotManager;
 
     // State machine
     final private static int STATE_BLUETOOTH_OFF = 1;
@@ -76,6 +75,12 @@ public class MainActivity extends Activity implements BluetoothAdapter.LeScanCal
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        // Set up the plots
+        plotManager = new PlotManager(this);
+        plotManager.ConfigureRawPlot();
+        plotManager.ConfigureFilteredPlot();
+        //plotManager.ConfigureFFTPlot(HeartRateMonitor.FFT_SIZE);
 
         Intent inti = getIntent();
         int flags = inti.getFlags();
@@ -214,7 +219,7 @@ public class MainActivity extends Activity implements BluetoothAdapter.LeScanCal
 
         String deviceName = device.getName();
         final String infoText = BluetoothHelper.getDeviceInfoText(device, rssi, scanRecord);
-        String targetDevice = connectEditText.getText().toString().substring(0,Math.min(14, connectEditText.getText().toString().length()));
+        String targetDevice = connectEditText.getText().toString().substring(0, Math.min(14, connectEditText.getText().toString().length()));
         if (deviceName.equals(targetDevice)) {
             bluetoothDevice = device;
         }
@@ -355,4 +360,71 @@ public class MainActivity extends Activity implements BluetoothAdapter.LeScanCal
 //        dataLayout.addView(
 //                view, LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
     }
+
+    @Override
+    public void manageNewSample(Float sample) {
+
+        // Increment the sample count. We use it to calculate current FPS.
+        //this.sampleCount++;
+
+        // Initialize HeartRateMonitor class
+        if (this.heartRateMonitor == null) {
+            this.heartRateMonitor = new HeartRateMonitor(sample);
+        }
+
+        // Store the sample
+        this.heartRateMonitor.AddNewSample(sample);
+
+        // Update the raw plot with the latest sample
+        Float lastSample = this.heartRateMonitor.GetLastSample();
+        plotManager.UpdateRawPlot(lastSample);
+
+//        // Plot the de-meaned mean RGB values, median filtered mean RGB values and peaks
+//        boolean isPeak = heartRateMonitor.DetectPeak();
+//        Scalar deMeanedMean = this.heartRateMonitor.GetLastMeanDeMeaned();
+//        Scalar medianFiltered = this.heartRateMonitor.GetLastMedianFiltered();
+//        plotManager.UpdateFilteredPlot(
+//                deMeanedMean.val[0], deMeanedMean.val[1], deMeanedMean.val[2],
+//                medianFiltered.val[0], medianFiltered.val[1], medianFiltered.val[2],
+//                isPeak);
+
+//        // Check if the current interval is over
+//        long nanoTime = System.nanoTime();
+//        if (this.ConvertNanoToMs(nanoTime - lastUpdateTime) >= this.refreshIntervalMs) {
+//
+//            // Reset the last updated time
+//            this.lastUpdateTime = nanoTime;
+//
+//            // Update the FPS variable with the average of the actual FPS of the current interval and the FPS of the previous interval
+//            double previousFPS = this.FPS;
+//            this.FPS = (this.sampleCount / (double)(this.refreshIntervalMs / 1000) + previousFPS) / 2;
+//            this.sampleCount = 0;
+//            Log.d(TAG, "FPS: " + this.FPS);
+//
+//            // Update the FFT plot
+//            int fftWindowInSeconds = 10;
+//            float[] fftMags = this.heartRateMonitor.FFT(fftWindowInSeconds, (int)Math.round(this.FPS));
+//            this.plotManager.UpdateFFTPlot(fftMags);
+//
+//            // Get heart rate
+//            this.heartRate = heartRateMonitor.GetHeartRate(this.FPS);
+//            Log.d(TAG, "Heart Rate: " + heartRate);
+//
+//            // Update the UI with the heart rate
+//            runOnUiThread(new Runnable() {
+//                @Override
+//                public void run() {
+//                    textViewHeartRate.setText("Heart Rate: " + heartRate);
+//                }
+//            });
+//        }
+
+        // Return the frame to be displayed on the device
+        return this.heartRateMonitor.GetLastMat();
+    }
+
+    private int ConvertNanoToMs(long nanoTime) {
+        return (int) nanoTime / 1000000;
+    }
+
 }
