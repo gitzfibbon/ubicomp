@@ -349,7 +349,7 @@ public class MainActivity extends ActionBarActivity implements BluetoothAdapter.
         Float floatValue = bytesToFloat(data);
 
         // Prepend and trim this display text
-        int maxLength = 200;
+        int maxLength = 400;
         if (samplesText.length() >= maxLength) {
             samplesText = floatValue.toString();
         }
@@ -381,14 +381,11 @@ public class MainActivity extends ActionBarActivity implements BluetoothAdapter.
         Float lastSample = this.heartRateMonitor.GetLastSample();
         plotManager.UpdateRawPlot(lastSample);
 
-//        // Plot the de-meaned mean RGB values, median filtered mean RGB values and peaks
-//        boolean isPeak = heartRateMonitor.DetectPeak();
-//        Scalar deMeanedMean = this.heartRateMonitor.GetLastMeanDeMeaned();
-//        Scalar medianFiltered = this.heartRateMonitor.GetLastMedianFiltered();
-//        plotManager.UpdateFilteredPlot(
-//                deMeanedMean.val[0], deMeanedMean.val[1], deMeanedMean.val[2],
-//                medianFiltered.val[0], medianFiltered.val[1], medianFiltered.val[2],
-//                isPeak);
+        // Plot the de-meaned mean RGB values, median filtered mean RGB values and peaks
+        boolean isPeak = heartRateMonitor.DetectPeak();
+        Float deMeanedSample = this.heartRateMonitor.GetLastDeMeanedSample();
+//        Float medianFiltered = this.heartRateMonitor.GetLastMedianFiltered();
+        plotManager.UpdateFilteredPlot(deMeanedSample, isPeak);
 
 //        // Check if the current interval is over
 //        long nanoTime = System.nanoTime();

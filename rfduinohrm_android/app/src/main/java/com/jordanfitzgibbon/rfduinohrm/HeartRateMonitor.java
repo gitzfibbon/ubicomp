@@ -12,19 +12,12 @@ public class HeartRateMonitor {
 
     private final String TAG = "HRM_HeartRateMonitor";
 
-    // Index into Scalar objects to get RGB values
-    private final int RED = 0;
-    private final int GREEN = 1;
-    private final int BLUE = 2;
-
     // How many samples to keep in memory
-    // FPS is 10-15
     private final int RECENT_VALUES_SIZE = 500;
 
     // Data structures to store samples
     private ArrayList<Float> rfduinoSamples;
-//    private ArrayList<Mat> mats;
-//    private ArrayList<Scalar> deMeanedMeans;
+    private ArrayList<Float> deMeanedSamples;
 //    private ArrayList<Scalar> medianFiltered;
 
     // Size of the FFT. Effective size is half of this.
@@ -38,8 +31,7 @@ public class HeartRateMonitor {
 
         // Initialize recent values with copies of the first frame
         this.rfduinoSamples = new ArrayList<Float>(Collections.nCopies(RECENT_VALUES_SIZE, firstSample));
-//        this.mats = new ArrayList<Mat>(Collections.nCopies(RECENT_VALUES_SIZE, firstFrame.rgba()));
-//        this.deMeanedMeans = new ArrayList<Scalar>(Collections.nCopies(RECENT_VALUES_SIZE, GetLastMeanDeMeanedHelper()));
+        this.deMeanedSamples = new ArrayList<Float>(Collections.nCopies(RECENT_VALUES_SIZE, GetLastDemeanedSampleHelper()));
 //        this.medianFiltered = new ArrayList<Scalar>(Collections.nCopies(RECENT_VALUES_SIZE, this.GetLastMedianFilteredHelper()));
     }
 
@@ -49,20 +41,12 @@ public class HeartRateMonitor {
         this.rfduinoSamples.remove(0);
         this.rfduinoSamples.add(sample);
 
-//        this.mats.remove(0);
-//        this.mats.add(frame.rgba());
-//
-//        this.deMeanedMeans.remove(0);
-//        this.deMeanedMeans.add(this.GetLastMeanDeMeanedHelper());
-//
+        this.deMeanedSamples.remove(0);
+        this.deMeanedSamples.add(this.GetLastDemeanedSampleHelper());
+
 //        this.medianFiltered.remove(0);
 //        this.medianFiltered.add(this.GetLastMedianFilteredHelper());
     }
-
-    // Gets the most recently added frame converted to Mat (for playback)
-//    public Mat GetLastMat() {
-//        return this.mats.get(RECENT_VALUES_SIZE - 1);
-//    }
 
     // Gets the most recent sample
     public Float GetLastSample() {
@@ -71,38 +55,28 @@ public class HeartRateMonitor {
     }
 
     // Gets the most recently stored de-meaned mean of the RGB values
-//    public Scalar GetLastMeanDeMeaned() {
-//        return this.deMeanedMeans.get(RECENT_VALUES_SIZE -1);
-//    }
+    public Float GetLastDeMeanedSample() {
+        return this.deMeanedSamples.get(RECENT_VALUES_SIZE -1);
+    }
 
-    // Calculates a de-meaned value of the Scalar of the most recent means
-//    private Scalar GetLastMeanDeMeanedHelper() {
-//
-//        // How many previous samples we will use to de-mean
-//        int meanWindowSize = 15;
-//
-//        double sumR = 0;
-//        double sumG = 0;
-//        double sumB = 0;
-//
-//        Scalar mean = this.GetLastSample(); // Initialize to the last mean but this will get overwritten
-//        for (int i = RECENT_VALUES_SIZE - meanWindowSize; i < RECENT_VALUES_SIZE; i++) {
-//            mean = Core.mean(mats.get(i));
-//            sumR += mean.val[RED];
-//            sumG += mean.val[GREEN];
-//            sumB += mean.val[BLUE];
-//        }
-//
-//        double meanR = sumR / meanWindowSize;
-//        double meanG = sumG / meanWindowSize;
-//        double meanB = sumB / meanWindowSize;
-//
-//        // Subtract the mean of the previous values from the mean Scalar
-//        Scalar latestMean = this.GetLastSample();
-//        mean.set(new double[] {latestMean.val[RED] - meanR, latestMean.val[GREEN] - meanG, latestMean.val[BLUE] - meanB});
-//
-//        return mean;
-//    }
+    // Calculates a de-meaned value of the most recent samples
+    private Float GetLastDemeanedSampleHelper() {
+
+        // How many previous samples we will use to de-mean
+        int meanWindowSize = 15;
+
+        // Calculate the mean of previous values
+        Float sum = 0f;
+        for (int i = RECENT_VALUES_SIZE - meanWindowSize; i < RECENT_VALUES_SIZE; i++) {
+            sum += rfduinoSamples.get(i);
+        }
+        Float mean = sum / meanWindowSize;
+
+        // Subtract the mean from the raw rfduino sample
+        Float demeanedSample = this.GetLastSample() - mean;
+
+        return demeanedSample;
+    }
 
     // Get the most recently stored median filtered mean Scalar
 //    public Scalar GetLastMedianFiltered() {
