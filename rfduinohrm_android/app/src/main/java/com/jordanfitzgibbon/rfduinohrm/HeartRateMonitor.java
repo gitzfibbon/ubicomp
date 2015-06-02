@@ -22,10 +22,9 @@ public class HeartRateMonitor {
     private ArrayList<Float> rfduinoSamples;
     private ArrayList<Float> deMeanedSamples;
     private ArrayList<Boolean> peaks;
-//    private ArrayList<Scalar> medianFiltered;
 
     // Size of the FFT. Effective size is half of this.
-    public static final int FFT_SIZE = 128;
+//    public static final int FFT_SIZE = 128;
 
     // A sample must change slope and cross above this threshold to be considered a heartbeat
     public static final double PEAK_DETECTION_THRESHOLD = 25;
@@ -39,7 +38,7 @@ public class HeartRateMonitor {
         this.rfduinoSamples = new ArrayList<Float>(Collections.nCopies(RECENT_VALUES_SIZE, firstSample));
         this.deMeanedSamples = new ArrayList<Float>(Collections.nCopies(RECENT_VALUES_SIZE, GetLastDemeanedSampleHelper()));
         this.peaks = new ArrayList<Boolean>(Collections.nCopies(RECENT_VALUES_SIZE, false));
-//        this.medianFiltered = new ArrayList<Scalar>(Collections.nCopies(RECENT_VALUES_SIZE, this.GetLastMedianFilteredHelper()));
+
     }
 
     // Store several different copies of the current frame
@@ -61,8 +60,6 @@ public class HeartRateMonitor {
         this.peaks.set(RECENT_VALUES_SIZE-2, this.DetectPeak()); // You need 3 values to detect a peak. Calculate the second from last item in the array.
         this.peaks.add(false);
 
-//        this.medianFiltered.remove(0);
-//        this.medianFiltered.add(this.GetLastMedianFilteredHelper());
     }
 
     // Gets the most recent sample
@@ -101,86 +98,6 @@ public class HeartRateMonitor {
         return peak;
     }
 
-    // Get the most recently stored median filtered mean Scalar
-//    public Scalar GetLastMedianFiltered() {
-//        return this.medianFiltered.get(RECENT_VALUES_SIZE -1);
-//    }
-
-    // Calculates the median filtered de-meaned mean of the frame
-//    private Scalar GetLastMedianFilteredHelper() {
-//        int medianSize = 2;
-//
-//        // Get medianSize values from the stored means and put them into separate arrays so they can be sorted.
-//        ArrayList<Double> R = new ArrayList<>(medianSize);
-//        ArrayList<Double> G = new ArrayList<>(medianSize);
-//        ArrayList<Double> B = new ArrayList<>(medianSize);
-//        for (int i = 0; i < medianSize ; i++)
-//        {
-//            R.add(this.deMeanedMeans.get(RECENT_VALUES_SIZE - i - 1).val[RED]);
-//            G.add(this.deMeanedMeans.get(RECENT_VALUES_SIZE - i - 1).val[GREEN]);
-//            B.add(this.deMeanedMeans.get(RECENT_VALUES_SIZE - i - 1).val[BLUE]);
-//        }
-//        Collections.sort(R);
-//        Collections.sort(G);
-//        Collections.sort(B);
-//
-//        Scalar medianValues = new Scalar(0,0,0,0);
-//        if (medianSize % 2 == 1) {
-//            int middleIndex = (medianSize - 1) / 2;
-//
-//            medianValues.val[RED] = R.get(middleIndex);
-//            medianValues.val[GREEN] = G.get(middleIndex);
-//            medianValues.val[BLUE] = B.get(middleIndex);
-//            return medianValues;
-//        }
-//        else
-//        {
-//            int lowIndex = (medianSize / 2) -1;
-//            int highIndex = medianSize / 2;
-//
-//            medianValues.val[RED] = (R.get(lowIndex) + R.get(highIndex)) / 2;
-//            medianValues.val[GREEN] = (G.get(lowIndex) + G.get(highIndex)) / 2;
-//            medianValues.val[BLUE] = (B.get(lowIndex) + B.get(highIndex)) / 2;
-//
-//            return medianValues;
-//        }
-//    }
-
-//    // Use only one color channel
-//    public float[] FFT(int windowInSeconds, int sampleRate) {
-//
-//        int sampleSize = windowInSeconds * sampleRate;
-//
-//        // Start by using de-meaned, median filtered values
-//
-//        float[] fftInput = new float[FFT_SIZE];
-//
-//        // Fill up fftInput and zero pad
-//        for (int i=0; i < FFT_SIZE; i++) {
-//            if (i < sampleSize) {
-//                fftInput[i] = (float)this.medianFiltered.get(RECENT_VALUES_SIZE - sampleSize + i).val[RED];
-//            }
-//            else {
-//                fftInput[i] = 0;
-//            }
-//
-//        }
-//
-//        FFT fft = new FFT(FFT_SIZE, sampleRate);
-//        fft.forward(fftInput);
-//
-//        // float[] fft_cpx = fft.getSpectrum();
-//        float[] imaginary = fft.getImaginaryPart();
-//        float[] real = fft.getRealPart();
-//        float[] magnitude = new float[FFT_SIZE];
-//
-//        for (int i = 0; i < FFT_SIZE; i++) {
-//            magnitude[i] = (float)Math.sqrt((real[i] * real[i]) + (imaginary[i] * imaginary[i]));
-//        }
-//
-//        return magnitude;
-//    }
-
     // A default overload that is applied to the latest value
     public boolean DetectPeak() {
         return this.DetectPeak(this.RECENT_VALUES_SIZE - 3, this.RECENT_VALUES_SIZE - 2, this.RECENT_VALUES_SIZE -1);
@@ -189,13 +106,6 @@ public class HeartRateMonitor {
     // Use the de-meaned values for peak detection
     public boolean DetectPeak(int previousX, int x, int nextX)
     {
-//        // Ignore samples that exceed the max feasible value
-//        Float maxValue = 175f;
-//        if (this.deMeanedSamples.get(x) > maxValue)
-//        {
-//            return false;
-//        }
-
         // After a peak is detected we must wait for a sample value to go below zero before we can count another peak
         // Otherwise, we may count false heartbeats
         if (this.waitingForZeroCross)
@@ -217,6 +127,7 @@ public class HeartRateMonitor {
 
     }
 
+    // NOT USED (GetHrFromAvgPeakInterval is used instead)
     private int CountPeaks(int windowInSeconds, int sampleRateHz) {
 
         // Figure out how many samples to pull in order to calculate a heartrate from the desired window time
@@ -253,7 +164,7 @@ public class HeartRateMonitor {
         int totalSamplesNeeded = Math.min(RECENT_VALUES_SIZE, windowInSeconds * sampleRateHz);
 
         boolean firstPeakFound = false;
-        ArrayList<Integer> intervals = new ArrayList<>();
+        ArrayList<Float> intervals = new ArrayList<>();
         int currentIntervalSize = 0;
 
         for (int i = RECENT_VALUES_SIZE - totalSamplesNeeded; i < RECENT_VALUES_SIZE; i++) {
@@ -271,7 +182,7 @@ public class HeartRateMonitor {
 
             // If we find another peak, store the interval size between this and the previous
             if (this.peaks.get(i)) {
-                intervals.add(currentIntervalSize);
+                intervals.add((float)currentIntervalSize);
                 currentIntervalSize = 0;
             }
 
@@ -279,33 +190,46 @@ public class HeartRateMonitor {
 
         }
 
-        // Calculate the mean sample count in each interval
-        int sum = 0;
+        // Convert each value to a time
+        float sampleRateInMs = 1000f / sampleRateHz;
         for (int i=0; i < intervals.size(); i++) {
-            sum += intervals.get(i);
+            intervals.set(i, intervals.get(i) * sampleRateInMs);
         }
 
-        float mean = (float) sum / intervals.size();
+        // Calculate the mean sample count in each interval
+        int sum = 0;
+        int numIntervals = 0;
+        for (int i=0; i < intervals.size(); i++) {
+            if (intervals.get(i) < 200 || intervals.get(i) > 2000) {
+                // Ignore the value
+                ;
+            }
+            else {
+                sum += intervals.get(i);
+                numIntervals++;
+            }
+        }
 
-        // Convert the mean (which is just a count) to ms
-        float sampleRateInMs = 1000f / sampleRateHz;
+        float heartRate = 0;
+        if (numIntervals != 0) {
+            float mean = sum / numIntervals;
 
-        // Now get the time span between each interval
-        float intervalLengthInMs = mean * sampleRateInMs;
-
-        // Figure out how many time spans fit in 60 seconds
-        float heartRate = 60 * 1000 / intervalLengthInMs;
-
+            // Figure out how many time spans fit in 60 seconds
+            heartRate = 60 * 1000 / mean;
+        }
+        
         return (int)Math.round(heartRate);
     }
 
     // Count peaks within this many recent seconds
     public int GetHeartRate(int windowInSeconds, int sampleRateHz) {
 
+        // Peak Counting
         // Multiple this by windowInSeconds to get the peaks within 60 seconds
-        Float windowMultiplier = 60f / windowInSeconds;
+        // Float windowMultiplier = 60f / windowInSeconds;
+        // int heartRate = (int) (this.CountPeaks(windowInSeconds, sampleRateHz) * windowMultiplier);
 
-        //int heartRate = (int) (this.CountPeaks(windowInSeconds, sampleRateHz) * windowMultiplier);
+        // Peak Intervals
         int heartRate = this.GetHrFromAvgPeakInterval(windowInSeconds, sampleRateHz);
 
         return  heartRate;

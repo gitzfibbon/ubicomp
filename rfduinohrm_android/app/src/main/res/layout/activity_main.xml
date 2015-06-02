@@ -65,7 +65,7 @@
 
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="125dp"
+            android:layout_height="150dp"
             android:orientation="horizontal" >
 
             <TextView
@@ -76,38 +76,32 @@
 
             <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="100dp"
-                android:orientation="vertical" >
+                android:layout_height="150dp"
+                android:orientation="vertical"
+                android:layout_gravity="right"
+                android:gravity="center">
+
                 <TextView
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Peak Detection HR"
-                    android:textSize="18dp"
+                    android:layout_height="25dp"
+                    android:text="Heartrate"
+                    android:textSize="20dp"
                     android:id="@+id/textViewPeakDetectionHrLabel" />
                 <TextView
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
+                    android:layout_height="65dp"
                     android:text="-"
-                    android:textSize="50dp"
+                    android:textSize="20dp"
                     android:id="@+id/textViewPeakDetectionHr" />
-            </LinearLayout>
 
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="100dp"
-                android:orientation="vertical" >
-                <TextView
+                <Switch
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="FFT HR"
-                    android:textSize="18dp"
-                    android:id="@+id/textViewFftHrLabel" />
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="-"
-                    android:textSize="50dp"
-                    android:id="@+id/textViewFftHr" />
+                    android:layout_height="30dp"
+                    android:text="Low/High Sampling Rate"
+                    android:id="@+id/switchSamplingRate"
+                    android:checked="true"
+                    android:enabled="false"/>
+
             </LinearLayout>
 
         </LinearLayout>
@@ -116,7 +110,7 @@
     <com.androidplot.xy.XYPlot
         android:id="@+id/filteredPlot"
         android:layout_width="fill_parent"
-        android:layout_height="200dp"
+        android:layout_height="350dp"
         androidPlot.title=""
         androidPlot.domainLabel=""
         androidPlot.rangeLabel="Demeaned Samples"
@@ -139,42 +133,16 @@
         androidPlot.graphWidget.marginRight="@dimen/marginRight"
         />
 
-    <com.androidplot.xy.XYPlot
-        android:id="@+id/rawPlot"
-        android:layout_width="fill_parent"
-        android:layout_height="200dp"
-        androidPlot.title=""
-        androidPlot.domainLabel=""
-        androidPlot.rangeLabel="Raw Samples"
-        androidPlot.titleWidget.labelPaint.textSize="@dimen/title_font_size"
-        androidPlot.domainLabelWidget.labelPaint.textSize="@dimen/domain_label_font_size"
-        androidPlot.rangeLabelWidget.labelPaint.textSize="@dimen/range_label_font_size"
-        androidPlot.graphWidget.rangeLabelPaint.textSize="@dimen/range_tick_label_font_size"
-        androidPlot.graphWidget.rangeOriginLabelPaint.textSize="@dimen/range_tick_label_font_size"
-        androidPlot.graphWidget.domainLabelPaint.textSize="@dimen/domain_tick_label_font_size"
-        androidPlot.graphWidget.domainOriginLabelPaint.textSize="@dimen/domain_tick_label_font_size"
-        androidPlot.legendWidget.textPaint.textSize="@dimen/legend_text_font_size"
-        androidPlot.legendWidget.iconSizeMetrics.heightMetric.value="15dp"
-        androidPlot.legendWidget.iconSizeMetrics.widthMetric.value="15dp"
-        androidPlot.legendWidget.heightMetric.value="25dp"
-        androidPlot.legendWidget.positionMetrics.anchor="right_bottom"
-        androidPlot.graphWidget.gridLinePaint.color="#000000"
-        androidPlot.graphWidget.marginBottom="@dimen/marginBottom"
-        androidPlot.graphWidget.marginTop="@dimen/marginTop"
-        androidPlot.graphWidget.marginLeft="@dimen/marginLeft"
-        androidPlot.graphWidget.marginRight="@dimen/marginRight"
-        />
-
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Samples from RFduino"
+        android:text="Samples from RFduino:"
         android:id="@+id/textViewDataHeader" />
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="400dp"
-        android:text="no data"
+        android:text=""
         android:id="@+id/textViewData" />
 
 </LinearLayout>

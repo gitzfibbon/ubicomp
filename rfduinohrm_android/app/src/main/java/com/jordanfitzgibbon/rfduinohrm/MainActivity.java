@@ -17,8 +17,10 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
+import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.LinearLayout;
+import android.widget.Switch;
 import android.widget.TextView;
 
 import java.nio.ByteBuffer;
@@ -77,6 +79,8 @@ public class MainActivity extends ActionBarActivity implements BluetoothAdapter.
 //    private Button clearButton;
 //    private LinearLayout dataLayout;
 
+    private Switch switchSamplingRate;
+
     //private RetainedFragment dataFragment;
     private boolean serviceBound;
     private boolean connectionIsOld = false;
@@ -90,7 +94,7 @@ public class MainActivity extends ActionBarActivity implements BluetoothAdapter.
 
         // Set up the plots
         plotManager = new PlotManager(this);
-        plotManager.ConfigureRawPlot();
+        //plotManager.ConfigureRawPlot();
         plotManager.ConfigureFilteredPlot();
 
 //        Intent inti = getIntent();
@@ -126,16 +130,27 @@ public class MainActivity extends ActionBarActivity implements BluetoothAdapter.
         connectionTextView = (TextView) findViewById(R.id.textViewConnection);
         textViewPeakDetectionHr = (TextView) findViewById(R.id.textViewPeakDetectionHr);
 
+        switchSamplingRate = (Switch) findViewById(R.id.switchSamplingRate);
+        switchSamplingRate.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                sendSamplingRate(isChecked);
+            }
+
+        });
+
         scanButton = (Button) findViewById(R.id.buttonScan);
         scanButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
 
                 connectButton.setEnabled(false);
+                connectionTextView.setText("");
 
 //                scanStarted = true;
                 bluetoothAdapter.startLeScan(
-                        new UUID[]{ RFduinoService.UUID_SERVICE },
+                        new UUID[]{RFduinoService.UUID_SERVICE},
                         MainActivity.this);
 
             }
@@ -173,6 +188,8 @@ public class MainActivity extends ActionBarActivity implements BluetoothAdapter.
 
                 connectButton.setEnabled(false);
                 disconnectButton.setEnabled(true);
+                switchSamplingRate.setEnabled(true);
+                switchSamplingRate.setChecked(true);
             }
         });
 
@@ -181,10 +198,27 @@ public class MainActivity extends ActionBarActivity implements BluetoothAdapter.
         disconnectButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+
+
                 disconnect();
             }
         });
 
+    }
+
+    private void sendSamplingRate(boolean isChecked) {
+        if (rfduinoService == null) {
+            return;
+        }
+
+        if (isChecked == false) {
+            // low sampling rate
+            rfduinoService.send(new byte[] {(byte)0});
+        }
+        else {
+            // high sampling rate
+            rfduinoService.send(new byte[] {(byte)1});
+        }
     }
 
     private void disconnect(){
@@ -206,12 +240,13 @@ public class MainActivity extends ActionBarActivity implements BluetoothAdapter.
 
         //connectButton.setEnabled(false);
         disconnectButton.setEnabled(false);
+        switchSamplingRate.setEnabled(false);
     }
 
     @Override
     protected void onStart() {
         super.onStart();
-        Log.w("Main","onStart called");
+//        Log.w("Main","onStart called");
 //        registerReceiver(scanModeReceiver, new IntentFilter(BluetoothAdapter.ACTION_SCAN_MODE_CHANGED));
 //        registerReceiver(bluetoothStateReceiver, new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED));
         registerReceiver(rfduinoReceiver, RFduinoService.getIntentFilter());
@@ -373,8 +408,9 @@ public class MainActivity extends ActionBarActivity implements BluetoothAdapter.
         }
 
         if (data.length == 4) {
-            // It's a float - do something with it
-            // Float floatValue = BluetoothHelper.bytesToFloat(data);
+            // It's an int - must be the sample interval in ms
+            int intValue = BluetoothHelper.bytesToInt(data);
+            this.sampleRateHz = 1000 / intValue;
         }
 
         // This is the standard case
@@ -385,20 +421,17 @@ public class MainActivity extends ActionBarActivity implements BluetoothAdapter.
             Float floatValue = values.get(i);
 
             // Append and trim this display text
-            int maxLength = 1700;
-            if (samplesText.length() >= maxLength) {
-                samplesText = floatValue.toString();
-            } else {
-                samplesText = samplesText + "|" + floatValue.toString();
-            }
-
-            // Make sure to trim down the text size to maxLength
-            samplesText = samplesText.substring(0, Math.min(maxLength, samplesText.length()));
-
+            samplesText = samplesText + "|" + floatValue.toString();
             dataTextView.setText(samplesText);
 
             // Add this new data sample to hr calculation
             this.AddNewSample(floatValue);
+        }
+
+        samplesText = samplesText + "\n";
+        int maxLength = 1500;
+        if (samplesText.length() >= maxLength) {
+            samplesText = "";
         }
     }
 
@@ -414,8 +447,8 @@ public class MainActivity extends ActionBarActivity implements BluetoothAdapter.
         this.heartRateMonitor.AddNewSample(sample);
 
         // Update the raw plot with the latest sample
-        Float lastSample = this.heartRateMonitor.GetLastSample();
-        plotManager.UpdateRawPlot(lastSample);
+//        Float lastSample = this.heartRateMonitor.GetLastSample();
+//        plotManager.UpdateRawPlot(lastSample);
 
         // Plot the de-meaned mean RGB values, median filtered mean RGB values and peaks
         boolean isPeak = this.heartRateMonitor.GetSecondFromLastPeak();
@@ -442,10 +475,10 @@ public class MainActivity extends ActionBarActivity implements BluetoothAdapter.
                 public void run() {
 
                     if (heartRate < 40 || heartRate > 250) {
-                        textViewPeakDetectionHr.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 30);
+                        textViewPeakDetectionHr.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 20);
                     }
                     else {
-                        textViewPeakDetectionHr.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 50);
+                        textViewPeakDetectionHr.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 60);
                     }
                     textViewPeakDetectionHr.setText(Integer.toString(heartRate));
                 }

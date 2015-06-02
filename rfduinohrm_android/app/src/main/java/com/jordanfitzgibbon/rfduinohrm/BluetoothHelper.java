@@ -29,6 +29,14 @@ public class BluetoothHelper {
                 .toString();
     }
 
+    public static Integer bytesToInt(byte[] data) {
+        int value = 0;
+        if (data.length == 4) {
+            value = ByteBuffer.wrap(data).order(ByteOrder.LITTLE_ENDIAN).getInt();
+        }
+        return value;
+    }
+
     public static Float bytesToFloat(byte[] data) {
         Float value = 0f;
         if (data.length == 4) {

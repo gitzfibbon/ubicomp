@@ -9,7 +9,6 @@ import com.androidplot.xy.LineAndPointFormatter;
 import com.androidplot.xy.SimpleXYSeries;
 import com.androidplot.xy.XYPlot;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -27,21 +26,8 @@ public class PlotManager {
     SimpleXYSeries seriesZeroCrossThreshold;
     SimpleXYSeries seriesPeaks;
 
-    // Plots raw samples from the rfduino
-    XYPlot rawPlot;
-    SimpleXYSeries seriesRaw;
-
-    // Plots median filtered values
-    SimpleXYSeries seriesMedian;
-
-    // FFT plot
-    XYPlot fftPlot;
-    SimpleXYSeries seriesFFT;
-
     public PlotManager(ActionBarActivity parent) {
         this.filteredPlot = (XYPlot)parent.findViewById(R.id.filteredPlot);
-        this.rawPlot = (XYPlot)parent.findViewById(R.id.rawPlot);
-//        this.fftPlot = (XYPlot)parent.findViewById(R.id.fftPlot);
     }
 
     public void UpdateFilteredPlot(
@@ -68,18 +54,9 @@ public class PlotManager {
 
     public void ConfigureFilteredPlot() {
 
-        double rangeBoundary = 200;
+        double rangeBoundary = 150;
         filteredPlot.setRangeBoundaries(-1 * rangeBoundary, rangeBoundary, BoundaryMode.FIXED);
         filteredPlot.setDomainBoundaries(0, plotSize, BoundaryMode.FIXED);
-
-        // Median
-//        seriesMedian = new SimpleXYSeries(
-//                Collections.nCopies(plotSize, 0), // convert array to a list
-//                SimpleXYSeries.ArrayFormat.Y_VALS_ONLY, // use array indices as x values and array values as y values
-//                "Median R" // title
-//        );
-//        LineAndPointFormatter seriesFormatterMedianR = new LineAndPointFormatter(Color.RED, null, null, null);
-//        filteredPlot.addSeries(seriesMedian, seriesFormatterMedianR);
 
         // DeMeaned
         seriesDeMeaned = new SimpleXYSeries(
@@ -123,58 +100,4 @@ public class PlotManager {
 
     }
 
-
-    public void UpdateRawPlot(Float sample) {
-
-        // Remove values from the series. Assume all series are the same size so use seriesRaw to do this check.
-        if (seriesRaw.size() >=  plotSize) {
-            seriesRaw.removeFirst();
-       }
-
-        seriesRaw.addLast(null, sample);
-
-        rawPlot.redraw();
-    }
-
-    public void ConfigureRawPlot() {
-
-        double rangeBoundary = 800;
-        rawPlot.setRangeBoundaries(0, rangeBoundary, BoundaryMode.FIXED);
-        rawPlot.setDomainBoundaries(0, this.plotSize, BoundaryMode.FIXED);
-
-        seriesRaw = new SimpleXYSeries(
-                Collections.nCopies(this.plotSize, 0), // convert array to a list
-                SimpleXYSeries.ArrayFormat.Y_VALS_ONLY, // use array indices as x values and array values as y values
-                "RFduino samples" // title
-        );
-        LineAndPointFormatter seriesFormatterR = new LineAndPointFormatter(Color.RED, null, null, null);
-        rawPlot.addSeries(seriesRaw, seriesFormatterR);
-    }
-
-
-    public void UpdateFFTPlot(float[] fftMags) {
-
-        ArrayList<Float> newSeriesValues = new ArrayList<>();
-        for (int i=fftMags.length/2; i<fftMags.length; i++) {
-            newSeriesValues.add(fftMags[i]);
-        }
-
-        seriesFFT.setModel(newSeriesValues, SimpleXYSeries.ArrayFormat.Y_VALS_ONLY);
-        fftPlot.redraw();
-    }
-
-    public void ConfigureFFTPlot(int fftSize) {
-
-        double rangeBoundary = 30;
-        fftPlot.setRangeBoundaries(0, rangeBoundary, BoundaryMode.FIXED);
-        //fftPlot.setDomainBoundaries(0, plotSize, BoundaryMode.FIXED);
-
-        seriesFFT = new SimpleXYSeries(
-                Collections.nCopies(fftSize, 0), // convert array to a list
-                SimpleXYSeries.ArrayFormat.Y_VALS_ONLY, // use array indices as x values and array values as y values
-                "Frequency R" // title
-        );
-        LineAndPointFormatter seriesFormatter = new LineAndPointFormatter(Color.RED, null, null, null);
-        fftPlot.addSeries(seriesFFT, seriesFormatter);
-    }
 }

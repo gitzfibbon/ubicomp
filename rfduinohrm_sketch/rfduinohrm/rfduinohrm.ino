@@ -21,57 +21,106 @@ void setup() {
   RFduinoBLE.deviceName = "jordanfitzgibbon";
   RFduinoBLE.advertisementData = "1234567890";
   RFduinoBLE.begin();  
-  
+
+
+  RFduinoBLE.advertisementInterval = 1000;
+
 }
 
 int i=0;
 const int batchSize = 10;
 int values[batchSize];
-int delayMs = 100;
+
+const int highSampleRateInMs = 100;
+const int lowSampleRateInMs = 200;
+int samplingDelayMs = highSampleRateInMs;
+boolean sendSamplingRate = false;
+
+boolean isConnected = false;
 
 void loop() {
-    
-  RFduino_ULPDelay( MILLISECONDS(delayMs) );
-
-  float sensorValue = analogRead(pulseSensor);
-  values[i] = (int)round(sensorValue);
-  Serial.println(i + ": " + values[i]);
   
-  if (i >= batchSize - 1) {
-
-    // reset i
-    i = 0;
+  if (isConnected == false) {
     
-    // Convert the batch to char array and send it
-    char buf[20];
-    for (int i = 0; i < batchSize; i++) {
- 
-      buf[2*i] = (char)highByte(values[i]);
-      buf[2*i+1] = (char)lowByte(values[i]);
-      
-      //for (int j = 0; j < 2; j++){
-      //  buf[2*i+j]=(char)(values[i] >> (8*j) & 0xFF);
-      //}
-    }
-    
-    // This is for robust sending taken from https://github.com/RFduino/RFduino/blob/master/libraries/RFduinoBLE/examples/BulkDataTransfer/BulkDataTransfer.ino#L84
-    while (! RFduinoBLE.send(buf, 20))
-      ;  // all tx buffers in use (can't send - try again later
-
-
-    Serial.println("Sending batch");
-    // RFduinoBLE.sendFloat(analogRead(pulseSensor));
+    // Sleep for a bit
+    int sleepTime = 1;
+    Serial.print("Sleeping for "); Serial.print(sleepTime); Serial.println(" seconds");
+    RFduino_ULPDelay(SECONDS(sleepTime));
   }
   else {
-    // Increment i
-    i++;  
-  }
+
+    if (sendSamplingRate == true) {
+      Serial.print("Sampling interval in ms is "); Serial.println(samplingDelayMs);
+      RFduinoBLE.sendInt(samplingDelayMs);
+      sendSamplingRate = false;
+    }
+    
+    // Sample at the specified sampling rate
+    
+    RFduino_ULPDelay( MILLISECONDS(samplingDelayMs) );
   
+    float sensorValue = analogRead(pulseSensor);
+    values[i] = (int)round(sensorValue);
+    Serial.print(i); Serial.print(": "); Serial.println(values[i]);
+    
+    if (i >= batchSize - 1) {
+  
+      // reset i
+      i = 0;
+      
+      // Convert the batch to char array and send it
+      char buf[20];
+      for (int i = 0; i < batchSize; i++) {
+   
+        buf[2*i] = (char)highByte(values[i]);
+        buf[2*i+1] = (char)lowByte(values[i]);
+      }
+      
+      // This is for robust sending taken from https://github.com/RFduino/RFduino/blob/master/libraries/RFduinoBLE/examples/BulkDataTransfer/BulkDataTransfer.ino#L84
+      Serial.println("Sending a batch");
+      while (! RFduinoBLE.send(buf, 20))
+        ;  // all tx buffers in use (can't send - try again later
+  
+    }
+    else {
+      // Increment i
+      i++;  
+    }
+    
+  }
 
 }
 
 void RFduinoBLE_onReceive(char *data, int len) {
-  // display the first recieved byte
-  Serial.println(data[0]);
+  if (data != NULL && data[0] == 1) {
+    Serial.println("Received request to sample at a high rate");
+    samplingDelayMs = highSampleRateInMs;
+    sendSamplingRate = true;
+  }
+  else if (data != NULL && data[0] == 0) {
+    Serial.println("Received request to sample at a low rate");
+    samplingDelayMs = lowSampleRateInMs;
+    sendSamplingRate = true;
+  }
+  else if (data != NULL) {
+    Serial.println(data[0]);
+  }
+
 }
+
+void RFduinoBLE_onConnect() {
+  // Re-initialize a bunch of variables
+  isConnected = true;
+  i=0;
+  samplingDelayMs = highSampleRateInMs;
+  sendSamplingRate = true;
+  Serial.println("Connected!");
+}
+
+void RFduinoBLE_onDisconnect() {
+  isConnected = false;
+  Serial.println("Disconnected :(");
+  
+}
+
 
