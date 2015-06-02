@@ -39,18 +39,18 @@ public class MainActivity extends ActionBarActivity implements BluetoothAdapter.
     // For keeping track of time
     long lastUpdateTime;
 
-    // How often to refresh the FFT and heart rate
+    // How often to refresh the heart rate
     private final int refreshIntervalMs = 2000;
 
-    // Keeps track of how many samples were collected in the current interval
-    private int sampleCount = 0;
-
+    // The current HR
     private int heartRate = 0;
 
-    private int state;
+//    private int state;
 
-    private boolean scanStarted;
-    private boolean scanning;
+//    private boolean scanStarted;
+//    private boolean scanning;
+
+    private boolean bleConnected = false;
 
     private BluetoothAdapter bluetoothAdapter;
     private BluetoothDevice bluetoothDevice;
@@ -92,23 +92,22 @@ public class MainActivity extends ActionBarActivity implements BluetoothAdapter.
         plotManager = new PlotManager(this);
         plotManager.ConfigureRawPlot();
         plotManager.ConfigureFilteredPlot();
-        //plotManager.ConfigureFFTPlot(HeartRateMonitor.FFT_SIZE);
 
-        Intent inti = getIntent();
-        int flags = inti.getFlags();
-        if((inti.getAction().equals("RFduinoTest_CallToMain")) || (serviceInForeground))//&& ((flags & Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY) == 0))
-        {
-            Log.w("Main", "Return from notifictation");
-            Intent stopForegroundIntent = new Intent(getApplicationContext(), RFduinoService.class);
-            stopForegroundIntent.setAction("RFduinoService_StopForeground");
-            getApplicationContext().startService(stopForegroundIntent);
-            serviceInForeground = false;
-            // Saving to sharedPreferences that the service is running in foreground now
-            //SharedPreferences.Editor editor = sharedPref.edit();
-            //editor.putBoolean("foregroundServiceRunning", serviceInForeground);
-            //editor.commit();
-            fromNotification = true;
-        }
+//        Intent inti = getIntent();
+//        int flags = inti.getFlags();
+//        if((inti.getAction().equals("RFduinoTest_CallToMain")) || (serviceInForeground))//&& ((flags & Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY) == 0))
+//        {
+//            Log.w("Main", "Return from notifictation");
+//            Intent stopForegroundIntent = new Intent(getApplicationContext(), RFduinoService.class);
+//            stopForegroundIntent.setAction("RFduinoService_StopForeground");
+//            getApplicationContext().startService(stopForegroundIntent);
+//            serviceInForeground = false;
+//            // Saving to sharedPreferences that the service is running in foreground now
+//            //SharedPreferences.Editor editor = sharedPref.edit();
+//            //editor.putBoolean("foregroundServiceRunning", serviceInForeground);
+//            //editor.commit();
+//            fromNotification = true;
+//        }
 
         bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
 
@@ -132,7 +131,9 @@ public class MainActivity extends ActionBarActivity implements BluetoothAdapter.
             @Override
             public void onClick(View v) {
 
-                scanStarted = true;
+                connectButton.setEnabled(false);
+
+//                scanStarted = true;
                 bluetoothAdapter.startLeScan(
                         new UUID[]{ RFduinoService.UUID_SERVICE },
                         MainActivity.this);
@@ -145,14 +146,20 @@ public class MainActivity extends ActionBarActivity implements BluetoothAdapter.
         connectButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+//
+//                if (null == bluetoothDevice) {
+//                    connectionTextView.setText("no device to connect");
+//                    return;
+//                }
+
                 //v.setEnabled(false);
                 //connectionStatusText.setText("Connecting...");
                 // if device was rotated we need to set up a new service connection with this activity
-                if (connectionIsOld) {
-                    Log.w("Main", "Rebuilding connection after rotation");
-                    connectionIsOld = false;
-                    rfduinoServiceConnection = genServiceConnection();
-                }
+//                if (connectionIsOld) {
+//                    Log.w("Main", "Rebuilding connection after rotation");
+//                    connectionIsOld = false;
+//                    rfduinoServiceConnection = genServiceConnection();
+//                }
                 if (serviceBound) {
                     if (rfduinoService.initialize()) {
                         if (rfduinoService.connect(bluetoothDevice.getAddress())) {
@@ -164,6 +171,8 @@ public class MainActivity extends ActionBarActivity implements BluetoothAdapter.
                     getApplicationContext().bindService(rfduinoIntent, rfduinoServiceConnection, BIND_AUTO_CREATE);
                 }
 
+                connectButton.setEnabled(false);
+                disconnectButton.setEnabled(true);
             }
         });
 
@@ -176,66 +185,85 @@ public class MainActivity extends ActionBarActivity implements BluetoothAdapter.
             }
         });
 
+    }
 
+    private void disconnect(){
+//
+//        if (bleConnected == false) {
+//            connectionTextView.setText("no device connected");
+//            return;
+//        }
 
+        if(rfduinoService != null) {
+            rfduinoService.disconnect();
+            rfduinoService = null;
+        }
+
+        if(rfduinoServiceConnection != null) {
+            getApplicationContext().unbindService(rfduinoServiceConnection);
+            serviceBound = false;
+        }
+
+        //connectButton.setEnabled(false);
+        disconnectButton.setEnabled(false);
     }
 
     @Override
     protected void onStart() {
         super.onStart();
         Log.w("Main","onStart called");
-        registerReceiver(scanModeReceiver, new IntentFilter(BluetoothAdapter.ACTION_SCAN_MODE_CHANGED));
-        registerReceiver(bluetoothStateReceiver, new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED));
+//        registerReceiver(scanModeReceiver, new IntentFilter(BluetoothAdapter.ACTION_SCAN_MODE_CHANGED));
+//        registerReceiver(bluetoothStateReceiver, new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED));
         registerReceiver(rfduinoReceiver, RFduinoService.getIntentFilter());
 
     }
 
+//
+//    @Override
+//    public boolean onCreateOptionsMenu(Menu menu) {
+//        // Inflate the menu; this adds items to the action bar if it is present.
+//        getMenuInflater().inflate(R.menu.menu_main, menu);
+//        return true;
+//    }
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_main, menu);
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
-        }
-
-        return super.onOptionsItemSelected(item);
-    }
+//    @Override
+//    public boolean onOptionsItemSelected(MenuItem item) {
+//        // Handle action bar item clicks here. The action bar will
+//        // automatically handle clicks on the Home/Up button, so long
+//        // as you specify a parent activity in AndroidManifest.xml.
+//        int id = item.getItemId();
+//
+//        //noinspection SimplifiableIfStatement
+//        if (id == R.id.action_settings) {
+//            return true;
+//        }
+//
+//        return super.onOptionsItemSelected(item);
+//    }
 
     @Override
     protected  void onResume() {
         super.onResume();
 
         // Set up a timer for recalculating heart rate
-        //this.lastUpdateTime = System.nanoTime();
         this.lastUpdateTime = System.currentTimeMillis();
     }
 
     @Override
     public void onLeScan(BluetoothDevice device, final int rssi, final byte[] scanRecord) {
         bluetoothAdapter.stopLeScan(this);
-        scanning = false;
+//        scanning = false;
 
         String deviceName = device.getName();
         String infoText = BluetoothHelper.getDeviceInfoText(device, rssi, scanRecord);
         String targetDevice = connectEditText.getText().toString().substring(0, Math.min(14, connectEditText.getText().toString().length()));
         if (deviceName.equals(targetDevice)) {
             bluetoothDevice = device;
+            connectButton.setEnabled(true);
         }
         else
         {
-            infoText = "Looking for " + targetDevice + " but found " + deviceName;
+            infoText = "Did not find " + targetDevice + ". Only found " + deviceName;
         }
 
         final String finalInfoText = infoText;
@@ -251,94 +279,86 @@ public class MainActivity extends ActionBarActivity implements BluetoothAdapter.
         return new ServiceConnection() {
             @Override
             public void onServiceConnected(ComponentName name, IBinder service) {
+
+
                 serviceBound = true;
                 rfduinoService = ((RFduinoService.LocalBinder) service).getService();
-                Log.w("Main","onServiceConnected called, service = "+ rfduinoService.toString());
-                if(fromNotification) {
-                    BTLEBundle bundle = rfduinoService.restoreData();
-                    if(bundle != null) {
-                        state = bundle.state_;
-                        bluetoothDevice = bundle.device;
-                        scanStarted = bundle.scanStarted;
-                        scanning = bundle.scanning;
-                        Log.w("Main","State restored from service, state: "+ state);
-                    }
-                    Log.w("Main","Stopping service before unbinding");
-                    Intent stopIntent = new Intent(getApplicationContext(),RFduinoService.class);
-                    getApplicationContext().stopService(stopIntent);
-                    fromNotification = false;
-//                    if(state<STATE_CONNECTED) {
-//                        disconnect();
+//                if(fromNotification) {
+//                    BTLEBundle bundle = rfduinoService.restoreData();
+//                    if(bundle != null) {
+//                        state = bundle.state_;
+//                        bluetoothDevice = bundle.device;
+//                        scanStarted = bundle.scanStarted;
+//                        scanning = bundle.scanning;
+//                        Log.w("Main","State restored from service, state: "+ state);
 //                    }
-                    //updateUi();
-                }
-                else{
+//                    Log.w("Main","Stopping service before unbinding");
+//                    Intent stopIntent = new Intent(getApplicationContext(),RFduinoService.class);
+//                    getApplicationContext().stopService(stopIntent);
+//                    fromNotification = false;
+////                    if(state<STATE_CONNECTED) {
+////                        disconnect();
+////                    }
+//                    //updateUi();
+//                }
+                //else{
                     if (rfduinoService.initialize()) {
 
                         if (rfduinoService.connect(bluetoothDevice.getAddress())) {
                             //upgradeState(STATE_CONNECTING);
                         }
                     }
-                }
+                //}
+
+                bleConnected = true;
             }
 
             @Override
             public void onServiceDisconnected(ComponentName name) {
-                Log.w("Main","onServiceDisconnected called");
+//                Log.w("Main","onServiceDisconnected called");
                 rfduinoService = null;
                 //downgradeState(STATE_DISCONNECTED);
             }
         };
     }
-    private void disconnect(){
-        if(rfduinoService != null) {
-            rfduinoService.disconnect();
-            rfduinoService = null;
-        }
-        else {Log.w("Main","Service empty");}
-        if(rfduinoServiceConnection != null) {
-            getApplicationContext().unbindService(rfduinoServiceConnection);
-            serviceBound = false;
-        }
-        else{ Log.w("Main","ServiceConnection empty");}
-    }
+
 
 
     private final BroadcastReceiver rfduinoReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            final String action = intent.getAction();
-            Log.w("Main","rfduinoReceiver called with " + action);
-            if (RFduinoService.ACTION_CONNECTED.equals(action)) {
-                //upgradeState(STATE_CONNECTED);
-            } else if (RFduinoService.ACTION_DISCONNECTED.equals(action)) {
-                //downgradeState(STATE_DISCONNECTED);
-            } else if (RFduinoService.ACTION_DATA_AVAILABLE.equals(action)) {
+//            final String action = intent.getAction();
+//            Log.w("Main","rfduinoReceiver called with " + action);
+//            if (RFduinoService.ACTION_CONNECTED.equals(action)) {
+//                //upgradeState(STATE_CONNECTED);
+//            } else if (RFduinoService.ACTION_DISCONNECTED.equals(action)) {
+//                //downgradeState(STATE_DISCONNECTED);
+//            } else if (RFduinoService.ACTION_DATA_AVAILABLE.equals(action)) {
                 AddNewData(intent.getByteArrayExtra(RFduinoService.EXTRA_DATA));
-            }
+            //}
         }
     };
 
-    private final BroadcastReceiver bluetoothStateReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            int state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, 0);
-            if (state == BluetoothAdapter.STATE_ON) {
-                //upgradeState(STATE_DISCONNECTED);
-            } else if (state == BluetoothAdapter.STATE_OFF) {
-                //downgradeState(STATE_BLUETOOTH_OFF);
-            }
-        }
-    };
+//    private final BroadcastReceiver bluetoothStateReceiver = new BroadcastReceiver() {
+//        @Override
+//        public void onReceive(Context context, Intent intent) {
+//            int state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, 0);
+//            if (state == BluetoothAdapter.STATE_ON) {
+//                //upgradeState(STATE_DISCONNECTED);
+//            } else if (state == BluetoothAdapter.STATE_OFF) {
+//                //downgradeState(STATE_BLUETOOTH_OFF);
+//            }
+//        }
+//    };
 
-    private final BroadcastReceiver scanModeReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            scanning = (bluetoothAdapter.getScanMode() != BluetoothAdapter.SCAN_MODE_NONE);
-            scanStarted &= scanning;
-            //updateUi();
-        }
-    };
+//    private final BroadcastReceiver scanModeReceiver = new BroadcastReceiver() {
+//        @Override
+//        public void onReceive(Context context, Intent intent) {
+////            scanning = (bluetoothAdapter.getScanMode() != BluetoothAdapter.SCAN_MODE_NONE);
+////            scanStarted &= scanning;
+//            //updateUi();
+//        }
+//    };
 
 //    @Override
 //    public void  onNewIntent(Intent intent) {
@@ -347,6 +367,10 @@ public class MainActivity extends ActionBarActivity implements BluetoothAdapter.
 
     // Handle new data received from the device
     private void AddNewData(byte[] data) {
+
+        if (null == data) {
+            return;
+        }
 
         if (data.length == 4) {
             // It's a float - do something with it
@@ -399,20 +423,12 @@ public class MainActivity extends ActionBarActivity implements BluetoothAdapter.
         plotManager.UpdateFilteredPlot(deMeanedSample, isPeak);
 
         // Check if the current interval is over
-        long nanoTime = System.nanoTime();
         long millisTime = System.currentTimeMillis();
-        long diff = millisTime - lastUpdateTime;
-        if (millisTime - lastUpdateTime >= this.refreshIntervalMs) {
-//        if (this.ConvertNanoToMs(nanoTime - lastUpdateTime) >= this.refreshIntervalMs) {
+        long timeDiff = millisTime - lastUpdateTime;
+        if (timeDiff >= this.refreshIntervalMs) {
 
             // Reset the last updated time
-            //this.lastUpdateTime = nanoTime;
             this.lastUpdateTime = System.currentTimeMillis();
-
-//            // Update the FFT plot
-//            int fftWindowInSeconds = 10;
-//            float[] fftMags = this.heartRateMonitor.FFT(fftWindowInSeconds, (int)Math.round(this.FPS));
-//            this.plotManager.UpdateFFTPlot(fftMags);
 
             // Get heart rate using a window of this many seconds
             int useWindowInSeconds = 6;
@@ -439,9 +455,4 @@ public class MainActivity extends ActionBarActivity implements BluetoothAdapter.
         // Return the newly calculated heart rate
         return heartRate;
     }
-
-    private int ConvertNanoToMs(long nanoTime) {
-        return (int) nanoTime / 1000000;
-    }
-
 }

@@ -49,14 +49,16 @@
                 android:layout_height="wrap_content"
                 android:text="Connect"
                 android:id="@+id/buttonConnect"
-                android:textSize="12dp" />
+                android:textSize="12dp"
+                android:enabled="false" />
 
             <Button
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Disconnect"
                 android:id="@+id/buttonDisconnect"
-                android:textSize="12dp" />
+                android:textSize="12dp"
+                android:enabled="false" />
 
 
         </LinearLayout>
@@ -144,32 +146,6 @@
         androidPlot.title=""
         androidPlot.domainLabel=""
         androidPlot.rangeLabel="Raw Samples"
-        androidPlot.titleWidget.labelPaint.textSize="@dimen/title_font_size"
-        androidPlot.domainLabelWidget.labelPaint.textSize="@dimen/domain_label_font_size"
-        androidPlot.rangeLabelWidget.labelPaint.textSize="@dimen/range_label_font_size"
-        androidPlot.graphWidget.rangeLabelPaint.textSize="@dimen/range_tick_label_font_size"
-        androidPlot.graphWidget.rangeOriginLabelPaint.textSize="@dimen/range_tick_label_font_size"
-        androidPlot.graphWidget.domainLabelPaint.textSize="@dimen/domain_tick_label_font_size"
-        androidPlot.graphWidget.domainOriginLabelPaint.textSize="@dimen/domain_tick_label_font_size"
-        androidPlot.legendWidget.textPaint.textSize="@dimen/legend_text_font_size"
-        androidPlot.legendWidget.iconSizeMetrics.heightMetric.value="15dp"
-        androidPlot.legendWidget.iconSizeMetrics.widthMetric.value="15dp"
-        androidPlot.legendWidget.heightMetric.value="25dp"
-        androidPlot.legendWidget.positionMetrics.anchor="right_bottom"
-        androidPlot.graphWidget.gridLinePaint.color="#000000"
-        androidPlot.graphWidget.marginBottom="@dimen/marginBottom"
-        androidPlot.graphWidget.marginTop="@dimen/marginTop"
-        androidPlot.graphWidget.marginLeft="@dimen/marginLeft"
-        androidPlot.graphWidget.marginRight="@dimen/marginRight"
-        />
-
-    <com.androidplot.xy.XYPlot
-        android:id="@+id/fftPlot"
-        android:layout_width="fill_parent"
-        android:layout_height="200dp"
-        androidPlot.title=""
-        androidPlot.domainLabel=""
-        androidPlot.rangeLabel="FFT"
         androidPlot.titleWidget.labelPaint.textSize="@dimen/title_font_size"
         androidPlot.domainLabelWidget.labelPaint.textSize="@dimen/domain_label_font_size"
         androidPlot.rangeLabelWidget.labelPaint.textSize="@dimen/range_label_font_size"
