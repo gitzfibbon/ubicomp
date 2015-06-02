@@ -27,7 +27,7 @@ public class HeartRateMonitor {
 //    public static final int FFT_SIZE = 128;
 
     // A sample must change slope and cross above this threshold to be considered a heartbeat
-    public static final double PEAK_DETECTION_THRESHOLD = 25;
+    public static final double PEAK_DETECTION_THRESHOLD = 20;
 
     // A sample must cross below this threshold to be counted as a zero crossing
     public static final double ZERO_CROSS_THRESHOLD = 0;
@@ -217,7 +217,7 @@ public class HeartRateMonitor {
             // Figure out how many time spans fit in 60 seconds
             heartRate = 60 * 1000 / mean;
         }
-        
+
         return (int)Math.round(heartRate);
     }
 
