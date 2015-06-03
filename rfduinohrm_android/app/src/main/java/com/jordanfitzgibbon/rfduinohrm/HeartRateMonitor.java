@@ -27,7 +27,7 @@ public class HeartRateMonitor {
 //    public static final int FFT_SIZE = 128;
 
     // A sample must change slope and cross above this threshold to be considered a heartbeat
-    public static final double PEAK_DETECTION_THRESHOLD = 20;
+    public static  int PEAK_DETECTION_THRESHOLD = 12;
 
     // A sample must cross below this threshold to be counted as a zero crossing
     public static final double ZERO_CROSS_THRESHOLD = 0;
@@ -200,7 +200,7 @@ public class HeartRateMonitor {
         int sum = 0;
         int numIntervals = 0;
         for (int i=0; i < intervals.size(); i++) {
-            if (intervals.get(i) < 200 || intervals.get(i) > 2000) {
+            if (intervals.get(i) < 300 || intervals.get(i) > 1500) {
                 // Ignore the value
                 ;
             }

@@ -38,6 +38,8 @@ public class MainActivity extends ActionBarActivity implements BluetoothAdapter.
     // How often to refresh the heart rate
     private final int refreshIntervalMs = 2000;
 
+    private boolean sensitiveMode = true;
+
     // The current HR
     private int heartRate = 0;
 
@@ -54,6 +56,9 @@ public class MainActivity extends ActionBarActivity implements BluetoothAdapter.
     private TextView connectionTextView;
     private EditText connectEditText;
     private TextView textViewPeakDetectionHr;
+
+    private EditText editTextPeakThreshold;
+    private TextView textViewPeakThreshold;
 
     private Button scanButton;
     private Button connectButton;
@@ -94,6 +99,9 @@ public class MainActivity extends ActionBarActivity implements BluetoothAdapter.
         dataTextView = (TextView) findViewById(R.id.textViewData);
         connectionTextView = (TextView) findViewById(R.id.textViewConnection);
         textViewPeakDetectionHr = (TextView) findViewById(R.id.textViewPeakDetectionHr);
+
+//        editTextPeakThreshold = (EditText)  findViewById(R.id.editTextPeakThreshold);
+//        textViewPeakThreshold = (TextView)  findViewById(R.id.textViewPeakThreshold);
 
         switchSamplingRate = (Switch) findViewById(R.id.switchSamplingRate);
         switchSamplingRate.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
@@ -322,9 +330,19 @@ public class MainActivity extends ActionBarActivity implements BluetoothAdapter.
 
             // Reset the last updated time
             this.lastUpdateTime = System.currentTimeMillis();
+//
+//            // Check if the peak threshold changed
+//            int newPeakThreshold = Integer.getInteger(editTextPeakThreshold.getText().toString(), HeartRateMonitor.PEAK_DETECTION_THRESHOLD);
+//            if (newPeakThreshold != HeartRateMonitor.PEAK_DETECTION_THRESHOLD) {
+//                // peak threshold changed
+//                HeartRateMonitor.PEAK_DETECTION_THRESHOLD = newPeakThreshold;
+//                plotManager.UpdatePeakDetectionLine();
+//
+//            }
+
 
             // Get heart rate using a window of this many seconds
-            int useWindowInSeconds = 6;
+            int useWindowInSeconds = 8;
 
             this.heartRate = heartRateMonitor.GetHeartRate(useWindowInSeconds, this.sampleRateHz);
             Log.d(TAG, "Heart Rate: " + heartRate);

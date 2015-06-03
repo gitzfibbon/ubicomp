@@ -52,9 +52,22 @@ public class PlotManager {
         filteredPlot.redraw();
     }
 
+//    public void UpdatePeakDetectionLine()
+//    {
+//        // Draws the threshold line for peak detection
+//        List<Double> peakDetectionThresholdNumbers = Collections.nCopies(this.plotSize, (double)HeartRateMonitor.PEAK_DETECTION_THRESHOLD);
+//        seriesPeakDetectionThreshold = new SimpleXYSeries(
+//                peakDetectionThresholdNumbers,
+//                SimpleXYSeries.ArrayFormat.Y_VALS_ONLY, // use array indices as x values and array values as y values
+//                "Peak Cross " + HeartRateMonitor.PEAK_DETECTION_THRESHOLD // series title
+//        );
+//        LineAndPointFormatter peakDetectionThresholdFormatter = new LineAndPointFormatter(Color.WHITE, null, null, null);
+//        filteredPlot.redraw();
+//    }
+
     public void ConfigureFilteredPlot() {
 
-        double rangeBoundary = 150;
+        double rangeBoundary = 125;
         filteredPlot.setRangeBoundaries(-1 * rangeBoundary, rangeBoundary, BoundaryMode.FIXED);
         filteredPlot.setDomainBoundaries(0, plotSize, BoundaryMode.FIXED);
 
@@ -89,7 +102,7 @@ public class PlotManager {
         filteredPlot.addSeries(seriesZeroCrossThreshold, zeroCrossThresholdFormatter);
 
         // Draws the threshold line for peak detection
-        List<Double> peakDetectionThresholdNumbers = Collections.nCopies(this.plotSize,HeartRateMonitor.PEAK_DETECTION_THRESHOLD);
+        List<Double> peakDetectionThresholdNumbers = Collections.nCopies(this.plotSize, (double)HeartRateMonitor.PEAK_DETECTION_THRESHOLD);
         seriesPeakDetectionThreshold = new SimpleXYSeries(
                 peakDetectionThresholdNumbers,
                 SimpleXYSeries.ArrayFormat.Y_VALS_ONLY, // use array indices as x values and array values as y values

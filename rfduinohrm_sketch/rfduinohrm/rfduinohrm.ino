@@ -38,6 +38,12 @@ boolean sendSamplingRate = false;
 
 boolean isConnected = false;
 
+// Used for median filtering
+boolean applyMedianFilter = true;
+float lastValue2 = 0; // n-2
+float lastValue1 = 0; // n-1
+float currentValue = 0; // n
+
 void loop() {
   
   if (isConnected == false) {
@@ -60,7 +66,19 @@ void loop() {
     RFduino_ULPDelay( MILLISECONDS(samplingDelayMs) );
   
     float sensorValue = analogRead(pulseSensor);
-    values[i] = (int)round(sensorValue);
+    lastValue2 = lastValue1;
+    lastValue1 = currentValue;
+    currentValue = sensorValue;
+   
+    int sampleToSend = 0;
+    if (applyMedianFilter == false) {
+      sampleToSend= (int)round(sensorValue);
+    }
+    else {
+      sampleToSend = (int)round((currentValue + lastValue1)/2);
+    }
+    
+    values[i] = sampleToSend;
     Serial.print(values[i]); Serial.print(", "); 
     
     if (i >= batchSize - 1) {
@@ -98,11 +116,13 @@ void RFduinoBLE_onReceive(char *data, int len) {
   if (data != NULL && data[0] == 1) {
     Serial.println("Received request to sample at a high rate");
     samplingDelayMs = highSampleRateInMs;
+    applyMedianFilter = true;
     sendSamplingRate = true;
   }
   else if (data != NULL && data[0] == 0) {
     Serial.println("Received request to sample at a low rate");
     samplingDelayMs = lowSampleRateInMs;
+    applyMedianFilter = false;
     sendSamplingRate = true;
   }
   else if (data != NULL) {
